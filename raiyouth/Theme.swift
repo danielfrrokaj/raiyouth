@@ -251,6 +251,16 @@ struct PremiumButtonStyle: ButtonStyle {
     }
 }
 
+// Custom Premium Card Tap Style (scales card to 0.98 on press)
+struct CardButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .opacity(configuration.isPressed ? 0.92 : 1.0)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+    }
+}
+
 extension View {
     func themeFont(_ style: ThemeFont.Style) -> some View {
         modifier(ThemeFont(style: style))

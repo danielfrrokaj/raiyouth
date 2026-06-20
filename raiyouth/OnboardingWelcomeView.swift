@@ -1,148 +1,125 @@
-//
-//  OnboardingWelcomeView.swift
-//  raiyouth
-//
-
 import SwiftUI
 
 struct OnboardingWelcomeView: View {
     @Binding var data: OnboardingData
     let onNext: () -> Void
+    let onBack: () -> Void
     
-    @FocusState private var activeField: Field?
+    @FocusState private var isFocused: Bool
     
-    enum Field {
-        case firstName, lastName, phoneNumber
-    }
-    
-    var isFormValid: Bool {
-        !data.firstName.trimmingCharacters(in: .whitespaces).isEmpty &&
-        !data.lastName.trimmingCharacters(in: .whitespaces).isEmpty &&
-        !data.phoneNumber.trimmingCharacters(in: .whitespaces).isEmpty
+    var isPhoneValid: Bool {
+        let clean = data.phoneNumber.filter { $0.isNumber }
+        return clean.count >= 6 && clean.count <= 12
     }
     
     var body: some View {
         VStack(spacing: 0) {
-            // Small inline Zog guide at the top to save screen space
-            ZogGuideView(
-                pose: .wave,
-                speechBubbleText: "Great! Let's start with your basic information.",
-                isHeroSize: false
-            )
-            .padding(.horizontal, Theme.Spacing.lg)
-            .padding(.top, Theme.Spacing.md)
-            .padding(.bottom, Theme.Spacing.lg)
-            
-            VStack(alignment: .leading, spacing: Theme.Spacing.xl) {
-                Text("Let's get to know you")
-                    .themeFont(.h1)
-                    .foregroundColor(.theme.textPrimary)
-                
-                // Revolut-like clean input fields direct on canvas
-                VStack(spacing: Theme.Spacing.lg) {
-                    
-                    // Name Field
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("First name")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(activeField == .firstName ? .theme.accentPrimary : .theme.textSecondary)
-                        
-                        TextField("Enter your name", text: $data.firstName)
-                            .focused($activeField, equals: .firstName)
-                            .font(.system(size: 18, weight: .regular))
-                            .foregroundColor(.white)
-                            .padding(.vertical, 8)
-                            .tint(.theme.accentPrimary)
-                        
-                        Rectangle()
-                            .frame(height: 1)
-                            .foregroundColor(activeField == .firstName ? .theme.accentPrimary : Color.white.opacity(0.15))
+            // Header with Back Button
+            HStack {
+                Button(action: onBack) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                        Text("Back")
                     }
-                    
-                    // Surname Field
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Last name")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(activeField == .lastName ? .theme.accentPrimary : .theme.textSecondary)
-                        
-                        TextField("Enter your surname", text: $data.lastName)
-                            .focused($activeField, equals: .lastName)
-                            .font(.system(size: 18, weight: .regular))
-                            .foregroundColor(.white)
-                            .padding(.vertical, 8)
-                            .tint(.theme.accentPrimary)
-                        
-                        Rectangle()
-                            .frame(height: 1)
-                            .foregroundColor(activeField == .lastName ? .theme.accentPrimary : Color.white.opacity(0.15))
-                    }
-                    
-                    // Phone Number Field
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Phone number")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(activeField == .phoneNumber ? .theme.accentPrimary : .theme.textSecondary)
-                        
-                        HStack(spacing: Theme.Spacing.sm) {
-                            // Country Code selector
-                            HStack(spacing: 4) {
-                                Text("🇽🇰")
-                                Text("+383")
-                                    .font(.system(size: 16, weight: .medium))
-                                    .foregroundColor(.theme.textPrimary)
-                            }
-                            .padding(.vertical, 8)
-                            
-                            TextField("123 456", text: $data.phoneNumber)
-                                .focused($activeField, equals: .phoneNumber)
-                                .keyboardType(.numberPad)
-                                .font(.system(size: 18, weight: .regular))
-                                .foregroundColor(.white)
-                                .padding(.vertical, 8)
-                                .tint(.theme.accentPrimary)
-                        }
-                        
-                        Rectangle()
-                            .frame(height: 1)
-                            .foregroundColor(activeField == .phoneNumber ? .theme.accentPrimary : Color.white.opacity(0.15))
-                    }
+                    .themeFont(.caption)
+                    .foregroundColor(.theme.textSecondary)
                 }
+                Spacer()
+            }
+            .padding(.horizontal, Theme.Spacing.lg)
+            .padding(.top, Theme.Spacing.xs)
+            
+            VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
+                Text("Build your Signal Tower")
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundColor(.theme.textPrimary)
+                    .padding(.top, Theme.Spacing.lg)
+                
+                Text("Enter your phone number to secure your island. We will send a verification code.")
+                    .themeFont(.caption)
+                    .foregroundColor(.theme.textSecondary)
+                
+                HStack(spacing: Theme.Spacing.md) {
+                    // Country Code selector box
+                    HStack(spacing: 6) {
+                        Text("🇦🇱")
+                            .font(.system(size: 22))
+                        Text("+355")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
+                    .padding(.horizontal, 14)
+                    .frame(height: 54)
+                    .background(Color.white.opacity(0.06))
+                    .cornerRadius(Theme.Radius.md)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Theme.Radius.md)
+                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    )
+                    
+                    // Phone textfield
+                    TextField("", text: $data.phoneNumber, prompt: Text("Mobile number").foregroundColor(.white.opacity(0.3)))
+                        .keyboardType(.numberPad)
+                        .focused($isFocused)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .frame(height: 54)
+                        .background(Color.white.opacity(0.06))
+                        .cornerRadius(Theme.Radius.md)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Theme.Radius.md)
+                                .stroke(isFocused ? Color.theme.accentPrimary : Color.white.opacity(0.1), lineWidth: 1)
+                        )
+                        .tint(Color.theme.accentPrimary)
+                }
+                .padding(.top, Theme.Spacing.md)
+                
+                if isPhoneValid {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.seal.fill")
+                            .foregroundColor(.theme.accentPrimary)
+                        Text("Signal Tower Built")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.theme.accentPrimary.opacity(0.15))
+                    .cornerRadius(10)
+                    .transition(.scale.combined(with: .opacity))
+                    .padding(.top, 8)
+                }
+                
+                Button(action: {
+                    // Navigate to Login/Already have account handler
+                }) {
+                    Text("Already have an account? Log in")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(Color.theme.accentTeal)
+                }
+                .padding(.top, Theme.Spacing.xs)
             }
             .padding(.horizontal, Theme.Spacing.lg)
             
             Spacer()
             
-            // Sub-Reward badge
-            HStack(spacing: 6) {
-                Image(systemName: "sparkles")
-                    .foregroundColor(.theme.accentPrimary)
-                    .font(.system(size: 14, weight: .bold))
-                Text("+20 RaiPoints")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .foregroundColor(.theme.accentPrimary)
+            // Continue/Sign up button
+            Button(action: onNext) {
+                Text("Build Tower")
             }
-            .padding(.horizontal, Theme.Spacing.md)
-            .padding(.vertical, 6)
-            .background(Color.theme.accentPrimary.opacity(0.12))
-            .cornerRadius(Theme.Radius.pill)
-            .padding(.bottom, Theme.Spacing.lg)
-            
-            // Primary Action Button (SOLID yellow)
-            Button(action: {
-                data.signupRewardAmount += 20.0
-                onNext()
-            }) {
-                Text("Continue")
-            }
-            .buttonStyle(PremiumButtonStyle(isEnabled: isFormValid))
-            .disabled(!isFormValid)
+            .buttonStyle(PremiumButtonStyle(isEnabled: isPhoneValid))
+            .disabled(!isPhoneValid)
             .padding(.horizontal, Theme.Spacing.lg)
-            .padding(.bottom, Theme.Spacing.lg)
+            .padding(.bottom, Theme.Spacing.xl)
         }
-        .ambientGlows()
+        .background(Color.theme.canvas.ignoresSafeArea())
+        .onAppear {
+            isFocused = true
+        }
     }
 }
 
 #Preview {
-    OnboardingWelcomeView(data: .constant(OnboardingData()), onNext: {})
+    OnboardingWelcomeView(data: .constant(OnboardingData()), onNext: {}, onBack: {})
 }

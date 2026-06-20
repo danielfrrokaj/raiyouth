@@ -1,8 +1,3 @@
-//
-//  OnboardingSuccessView.swift
-//  raiyouth
-//
-
 import SwiftUI
 
 // Confetti Particle model
@@ -26,61 +21,40 @@ struct OnboardingSuccessView: View {
     @State private var isVaultUnlocked = false
     @State private var showDetails = false
     
-    @State private var showNextMission = false
-    
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     
     var body: some View {
         ZStack {
+            Color.theme.canvas.ignoresSafeArea()
+            
             // Main Content
-            VStack(spacing: Theme.Spacing.lg) {
-                
-                // Header Character
-                ZStack {
-                    if !reduceMotion {
-                        Circle()
-                            .fill(Color.theme.accentPrimary.opacity(0.12))
-                            .frame(width: 180, height: 180)
-                            .blur(radius: 25)
-                            .scaleEffect(pulseScale)
-                            .onAppear {
-                                withAnimation(
-                                    .easeInOut(duration: 1.2)
-                                    .repeatForever(autoreverses: true)
-                                ) {
-                                    pulseScale = 1.35
-                                }
-                            }
-                    }
-                    
-                    ZogGuideView(
-                        pose: showNextMission ? .wave : .cheer,
-                        speechBubbleText: showNextMission ?
-                            "Welcome to your Quest Hub! Let's activate your account." :
-                            (isVaultUnlocked ? "Congratulations! Your cash bonus is claimed." : "You unlocked a mystery vault! Tap to open your reward."),
-                        isHeroSize: true
-                    )
-                }
+            VStack(spacing: Theme.Spacing.md) {
+                // Large character guide cheering
+                ZogGuideView(
+                    pose: .cheer,
+                    speechBubbleText: isVaultUnlocked ?
+                        "Perfect! Your Money Island is complete." :
+                        "Your island is ready! Open the vault to claim your reward.",
+                    isHeroSize: true
+                )
                 .padding(.top, Theme.Spacing.md)
                 
                 if !isVaultUnlocked {
-                    // Mystery Vault Interactive Graphic
                     Spacer()
                     
+                    // Mystery Vault Interactive Graphic
                     Button(action: unlockVault) {
                         VStack(spacing: Theme.Spacing.md) {
                             ZStack {
-                                // Glow ring behind chest
                                 Circle()
                                     .fill(Color.theme.accentPrimary.opacity(0.08))
-                                    .frame(width: 140, height: 140)
+                                    .frame(width: 130, height: 130)
                                     .scaleEffect(vaultScale)
                                 
-                                // Frosted glass vault circle
                                 Circle()
                                     .fill(reduceTransparency ? Color.theme.surface3 : Color.theme.glassFillStrong)
-                                    .frame(width: 120, height: 120)
+                                    .frame(width: 110, height: 110)
                                     .overlay(
                                         Circle()
                                             .stroke(
@@ -92,18 +66,18 @@ struct OnboardingSuccessView: View {
                                             )
                                     )
                                 
-                                // Lock graphic
-                                Image(systemName: "lock.shield.fill")
-                                    .font(.system(size: 50, weight: .bold))
-                                    .foregroundColor(.theme.accentPrimary)
-                                    .shadow(color: Color.theme.accentPrimary.opacity(0.5), radius: 10)
+                                Image("gift-3d")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 76, height: 76)
+                                    .shadow(color: Color.theme.accentPrimary.opacity(0.3), radius: 8)
                             }
                             
                             Text("Claim your signup reward")
                                 .themeFont(.title)
                                 .foregroundColor(.theme.textPrimary)
                             
-                            Text("Tap to open the vault")
+                            Text("Tap to unlock the vault")
                                 .themeFont(.caption)
                                 .foregroundColor(.theme.textSecondary)
                         }
@@ -122,136 +96,61 @@ struct OnboardingSuccessView: View {
                     }
                     
                     Spacer()
-                } else if !showNextMission {
-                    // Vault Unlocked: Show Money Won & Details
-                    VStack(spacing: Theme.Spacing.md) {
-                        
-                        // Cash won amount (32pt Display, tabular, tightened tracking)
-                        VStack(spacing: 4) {
-                            Text("You won")
-                                .themeFont(.caption)
-                                .foregroundColor(.theme.accentPrimary)
-                                .padding(.horizontal, Theme.Spacing.md)
-                                .padding(.vertical, 4)
-                                .background(Color.theme.accentPrimary.opacity(0.12))
-                                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.pill, style: .continuous))
-                            
-                            Text(String(format: "+%.2f €", data.signupRewardAmount))
-                                .themeFont(.display(value: data.signupRewardAmount))
-                                .foregroundColor(.theme.accentPrimary)
-                                .scaleEffect(showDetails ? 1.0 : 0.5)
-                                .opacity(showDetails ? 1.0 : 0.0)
-                                .animation(.spring(response: 0.5, dampingFraction: 0.6).delay(0.2), value: showDetails)
-                        }
-                        
-                        // Setup Summary Card fading in
-                        if showDetails {
-                            VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-                                Text("Your setup summary")
-                                    .themeFont(.title)
-                                    .foregroundColor(.theme.textPrimary)
+                } else {
+                    // Vault Unlocked: Show Money Won & Island Unlocked Details
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack(spacing: Theme.Spacing.lg) {
+                            // Reward Amount Card
+                            VStack(spacing: 4) {
+                                Text("Bonus reward")
+                                    .themeFont(.caption)
+                                    .foregroundColor(.theme.accentPrimary)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 4)
+                                    .background(Color.theme.accentPrimary.opacity(0.12))
+                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                                 
-                                VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-                                    HStack {
-                                        Image(systemName: "flag.fill")
-                                            .foregroundColor(.theme.accentPrimary)
-                                            .frame(width: 24)
-                                        Text(data.intent?.sentenceCased ?? "none")
-                                            .themeFont(.body)
-                                            .foregroundColor(.theme.textPrimary)
-                                    }
-                                    
-                                    HStack {
-                                        Image(systemName: "sparkles")
-                                            .foregroundColor(.theme.accentTeal)
-                                            .frame(width: 24)
-                                        Text(data.persona?.sentenceCased ?? "none")
-                                            .themeFont(.body)
-                                            .foregroundColor(.theme.textPrimary)
-                                    }
-                                    
-                                    HStack {
-                                        Image(systemName: "creditcard.fill")
-                                            .foregroundColor(.theme.accentPrimary)
-                                            .frame(width: 24)
-                                        Text(data.cardColor.sentenceCased)
-                                            .themeFont(.body)
-                                            .foregroundColor(.theme.textPrimary)
-                                    }
+                                Text(String(format: "+%.2f €", data.signupRewardAmount))
+                                    .themeFont(.display(value: data.signupRewardAmount))
+                                    .foregroundColor(.theme.accentPrimary)
+                            }
+                            .padding(.top, 8)
+                            
+                            // Setup Summary Checklist (Money Island Completed Nodes)
+                            VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+                                Text("Your Money Island summary")
+                                    .themeFont(.title)
+                                    .foregroundColor(.white)
+                                    .padding(.bottom, 4)
+                                
+                                VStack(spacing: 12) {
+                                    summaryRow(icon: "flag.fill", label: "Guide introduced", value: "Rai unlocked")
+                                    summaryRow(icon: "antenna.radiowaves.left.and.right", label: "Signal Tower active", value: "verified")
+                                    summaryRow(icon: "house.fill", label: "Profile House built", value: data.aliasName.isEmpty ? data.firstName : data.aliasName)
+                                    summaryRow(icon: "lock.shield.fill", label: "Trust Gate open", value: "identity confirmed")
+                                    summaryRow(icon: "mappin.and.ellipse", label: "Home Base set", value: "address verified")
+                                    summaryRow(icon: "lock.fill", label: "Vault locked", value: "protected")
                                 }
                             }
                             .padding(Theme.Spacing.lg)
                             .glassCard(radius: Theme.Radius.lg)
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                            .animation(.spring(response: 0.4, dampingFraction: 0.8).delay(0.4), value: showDetails)
+                            .padding(.horizontal, 2)
                         }
+                        .padding(.vertical, 8)
                     }
-                    .padding(.horizontal, Theme.Spacing.lg)
                     
                     Spacer()
                     
-                    // Proceed to Level 2 transition
-                    Button(action: {
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                            showNextMission = true
-                        }
-                    }) {
-                        Text("Continue")
+                    // Enter My App CTA
+                    Button(action: onFinish) {
+                        Text("Enter my app")
                     }
                     .buttonStyle(PremiumButtonStyle(isEnabled: true))
-                    .padding(.horizontal, Theme.Spacing.xxl)
-                    .padding(.bottom, Theme.Spacing.xxl)
-                } else {
-                    // Level 2 Intro: "Your next mission"
-                    VStack(spacing: Theme.Spacing.lg) {
-                        VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-                            HStack {
-                                Text("Good evening, \(data.firstName.sentenceCased)")
-                                    .themeFont(.h2)
-                                    .foregroundColor(.theme.textPrimary)
-                                Spacer()
-                            }
-                            
-                            HStack(spacing: 6) {
-                                Image(systemName: "sparkles")
-                                    .foregroundColor(.theme.accentPrimary)
-                                Text("300 RaiPoints")
-                                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                                    .foregroundColor(.theme.accentPrimary)
-                            }
-                            .padding(.horizontal, Theme.Spacing.md)
-                            .padding(.vertical, 6)
-                            .background(Color.theme.accentPrimary.opacity(0.12))
-                            .cornerRadius(Theme.Radius.pill)
-                            
-                            // Mission Details Card
-                            VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-                                Text("Your next mission")
-                                    .font(.system(size: 13, weight: .semibold))
-                                    .foregroundColor(.theme.accentTeal)
-                                
-                                Text("Add money to your account and start your journey!")
-                                    .themeFont(.body)
-                                    .foregroundColor(.theme.textPrimary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                
-                                Button(action: onFinish) {
-                                    Text("Start mission")
-                                }
-                                .buttonStyle(PremiumButtonStyle(isEnabled: true))
-                                .padding(.top, Theme.Spacing.sm)
-                            }
-                            .padding(Theme.Spacing.lg)
-                            .glassCard(radius: Theme.Radius.lg)
-                        }
-                        .padding(.horizontal, Theme.Spacing.lg)
-                    }
-                    .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
-                    
-                    Spacer()
+                    .padding(.horizontal, Theme.Spacing.lg)
+                    .padding(.bottom, Theme.Spacing.xl)
                 }
             }
-            .background(Color.theme.canvas.ignoresSafeArea())
+            .padding(.horizontal, Theme.Spacing.lg)
             
             // Confetti Overlay
             if !reduceMotion {
@@ -268,12 +167,35 @@ struct OnboardingSuccessView: View {
         }
     }
     
+    private func summaryRow(icon: String, label: String, value: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(Color.theme.accentPrimary)
+                .frame(width: 20, height: 20)
+                .background(Color.theme.accentPrimary.opacity(0.12))
+                .clipShape(Circle())
+            
+            VStack(alignment: .leading, spacing: 1) {
+                Text(label)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.white)
+                Text(value.sentenceCased)
+                    .font(.system(size: 11))
+                    .foregroundColor(Color.theme.textSecondary)
+            }
+            
+            Spacer()
+            
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundColor(Color.theme.success)
+                .font(.system(size: 15))
+        }
+    }
+    
     private func unlockVault() {
-        // Roll random reward between 10.00 and 25.00
         let amounts = [10.00, 15.00, 20.00, 25.00]
         let rolledAmount = amounts.randomElement() ?? 15.00
-        
-        // Save won amount
         data.signupRewardAmount = rolledAmount
         
         withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
@@ -281,20 +203,11 @@ struct OnboardingSuccessView: View {
         }
         
         triggerRewardEffect()
-        
-        // Stagger details presentation
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            withAnimation {
-                showDetails = true
-            }
-        }
     }
     
     private func triggerRewardEffect() {
-        // Haptic Feedback
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         
-        // Generate Confetti
         if !reduceMotion {
             let colors = [
                 Color.theme.accentPrimary,

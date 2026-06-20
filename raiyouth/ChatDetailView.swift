@@ -15,16 +15,46 @@ struct ChatDetailView: View {
         var isTransaction: Bool { amount != nil }
     }
     
-    @State private var messages: [Message] = [
-        Message(text: "Hey! Thanks for getting the tickets.", isMe: false),
-        Message(text: "No problem!", isMe: true),
-        Message(amount: 25.00, emoji: "🎟️", isMe: true)
-    ]
+    // Initializer to set custom initial messages for Rai
+    init(chatName: String, isOnline: Bool) {
+        self.chatName = chatName
+        self.isOnline = isOnline
+        
+        if chatName == "Rai" {
+            _messages = State(initialValue: [
+                Message(text: "hi! i'm Rai, your personal guide. i can help you analyze your spending, guide you through cool features, or note down your feedback. what should we start with?", isMe: false)
+            ])
+            _quickReplies = State(initialValue: ["analyze transactions 📊", "explore features ✨", "give feedback 💬"])
+            _lastQuestionAsked = State(initialValue: .welcome)
+        } else {
+            _messages = State(initialValue: [
+                Message(text: "Hey! Thanks for getting the tickets.", isMe: false),
+                Message(text: "No problem!", isMe: true),
+                Message(amount: 25.00, emoji: "🎟️", isMe: true)
+            ])
+            _quickReplies = State(initialValue: [])
+            _lastQuestionAsked = State(initialValue: nil)
+        }
+    }
     
+    @State private var messages: [Message]
     @State private var inputText: String = ""
     @State private var showingSendMoneySheet = false
     @State private var sendAmount: String = ""
     @State private var selectedEmoji: String = "💸"
+    
+    // Simulated chat states
+    @State private var isTyping = false
+    @State private var quickReplies: [String]
+    @State private var lastQuestionAsked: QuestionType?
+    
+    enum QuestionType {
+        case welcome
+        case transactions
+        case features
+        case feedback
+        case transactionGoalPrompt
+    }
     
     let emojis = ["💸", "🍔", "🚕", "🎟️", "🍻", "☕️"]
     
@@ -43,17 +73,21 @@ struct ChatDetailView: View {
                             .foregroundColor(.white)
                     }
                     
-                    let initials = chatName.split(separator: " ").compactMap { $0.first }.map { String($0) }.joined()
-                    
                     ZStack(alignment: .bottomTrailing) {
-                        Circle()
-                            .fill(Color.white.opacity(0.12))
-                            .frame(width: 40, height: 40)
-                            .overlay(
-                                Text(initials)
-                                    .font(.system(size: 14, weight: .bold))
-                                    .foregroundColor(.white)
-                            )
+                        if chatName == "Rai" {
+                            RaiAvatar(size: 40)
+                                .overlay(Circle().stroke(Color.theme.accentPrimary, lineWidth: 1))
+                        } else {
+                            let initials = chatName.split(separator: " ").compactMap { $0.first }.map { String($0) }.joined()
+                            Circle()
+                                .fill(Color.white.opacity(0.12))
+                                .frame(width: 40, height: 40)
+                                .overlay(
+                                    Text(initials)
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundColor(.white)
+                                )
+                        }
                         
                         if isOnline {
                             Circle()
@@ -64,11 +98,24 @@ struct ChatDetailView: View {
                     }
                     
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(chatName)
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.white)
+                        HStack(spacing: 6) {
+                            Text(chatName)
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
+                            
+                            if chatName == "Rai" {
+                                Text("assistant")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundColor(Color.theme.accentPrimary)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Color.theme.accentPrimary.opacity(0.15))
+                                    .cornerRadius(4)
+                            }
+                        }
+                        
                         if isOnline {
-                            Text("Active now")
+                            Text("active now")
                                 .font(.system(size: 12))
                                 .foregroundColor(Color.theme.textSecondary)
                         }
@@ -89,20 +136,115 @@ struct ChatDetailView: View {
                 ScrollViewReader { proxy in
                     ScrollView(.vertical, showsIndicators: false) {
                         VStack(spacing: 16) {
+                            if chatName == "Rai" {
+                                // Highlighted Character header on top
+                                VStack(spacing: 12) {
+                                    ZStack {
+                                        RaiAvatar(size: 90)
+                                            .overlay(Circle().stroke(Color.theme.accentPrimary, lineWidth: 2))
+                                            .shadow(color: Color.theme.accentPrimary.opacity(0.3), radius: 10)
+                                        
+                                        Circle()
+                                            .fill(Color.theme.success)
+                                            .frame(width: 14, height: 14)
+                                            .overlay(Circle().stroke(Color.theme.canvas, lineWidth: 2))
+                                            .offset(x: 30, y: 30)
+                                    }
+                                    .padding(.top, 16)
+                                    
+                                    VStack(spacing: 6) {
+                                        HStack(spacing: 6) {
+                                            Text("Rai")
+                                                .font(.system(size: 20, weight: .bold))
+                                                .foregroundColor(.white)
+                                            Text("assistant")
+                                                .font(.system(size: 10, weight: .bold))
+                                                .foregroundColor(Color.theme.accentPrimary)
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2)
+                                                .background(Color.theme.accentPrimary.opacity(0.15))
+                                                .cornerRadius(4)
+                                        }
+                                        
+                                        Text("your personal pocket companion")
+                                            .font(.system(size: 13))
+                                            .foregroundColor(.white.opacity(0.5))
+                                    }
+                                }
+                                .padding(.bottom, 16)
+                            }
+                            
                             ForEach(messages) { message in
-                                MessageBubble(message: message)
+                                MessageBubble(message: message, chatName: chatName)
                                     .id(message.id)
+                            }
+                            
+                            if isTyping {
+                                HStack(alignment: .bottom, spacing: 8) {
+                                    RaiAvatar(size: 28)
+                                        .overlay(Circle().stroke(Color.theme.accentPrimary, lineWidth: 1))
+                                    
+                                    HStack(spacing: 4) {
+                                        Circle()
+                                            .fill(Color.white.opacity(0.5))
+                                            .frame(width: 6, height: 6)
+                                        Circle()
+                                            .fill(Color.white.opacity(0.5))
+                                            .frame(width: 6, height: 6)
+                                        Circle()
+                                            .fill(Color.white.opacity(0.5))
+                                            .frame(width: 6, height: 6)
+                                    }
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(Color.theme.surface2)
+                                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                    
+                                    Spacer()
+                                }
+                                .id("typingIndicator")
                             }
                         }
                         .padding()
                     }
                     .onChange(of: messages.count) { _ in
-                        if let lastId = messages.last?.id {
+                        scrollToBottom(proxy: proxy)
+                    }
+                    .onChange(of: isTyping) { typing in
+                        if typing {
                             withAnimation {
-                                proxy.scrollTo(lastId, anchor: .bottom)
+                                proxy.scrollTo("typingIndicator", anchor: .bottom)
                             }
+                        } else {
+                            scrollToBottom(proxy: proxy)
                         }
                     }
+                }
+                
+                // Quick Replies float above input bar
+                if chatName == "Rai" && !quickReplies.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(quickReplies, id: \.self) { reply in
+                                Button(action: {
+                                    handleUserMessage(reply)
+                                }) {
+                                    Text(reply)
+                                        .font(.system(size: 13, weight: .bold))
+                                        .foregroundColor(Color.theme.textOnAccentYellow)
+                                        .padding(.horizontal, 16)
+                                        .padding(.vertical, 10)
+                                        .background(Color.theme.accentPrimary)
+                                        .cornerRadius(20)
+                                        .shadow(color: Color.black.opacity(0.15), radius: 6, x: 0, y: 3)
+                                }
+                                .buttonStyle(CardButtonStyle())
+                            }
+                        }
+                        .padding(.horizontal)
+                        .padding(.vertical, 8)
+                    }
+                    .background(Color.theme.canvas)
                 }
                 
                 // Input Bar
@@ -120,15 +262,17 @@ struct ChatDetailView: View {
                                 .foregroundColor(Color(hex: "1A1A14"))
                         }
                     }
+                    .disabled(chatName == "Rai")
+                    .opacity(chatName == "Rai" ? 0.3 : 1.0)
                     
                     HStack {
-                        TextField("Message...", text: $inputText)
+                        TextField(chatName == "Rai" ? "ask Rai something..." : "message...", text: $inputText)
                             .foregroundColor(.white)
                             .accentColor(Color.theme.accentPrimary)
                         
                         if !inputText.isEmpty {
                             Button(action: {
-                                sendMessage()
+                                handleUserMessage(inputText)
                             }) {
                                 Image(systemName: "paperplane.fill")
                                     .foregroundColor(Color.theme.accentPrimary)
@@ -137,9 +281,13 @@ struct ChatDetailView: View {
                         }
                     }
                     .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(Color.white.opacity(0.1))
-                    .cornerRadius(20)
+                    .frame(height: 44)
+                    .background(Color.theme.surface3)
+                    .cornerRadius(Theme.Radius.sm)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Theme.Radius.sm)
+                            .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                    )
                 }
                 .padding()
                 .background(Color.theme.canvas.ignoresSafeArea(.container, edges: .bottom))
@@ -148,6 +296,14 @@ struct ChatDetailView: View {
         .navigationBarHidden(true)
         .sheet(isPresented: $showingSendMoneySheet) {
             sendMoneySheet
+        }
+    }
+    
+    private func scrollToBottom(proxy: ScrollViewProxy) {
+        if let lastId = messages.last?.id {
+            withAnimation {
+                proxy.scrollTo(lastId, anchor: .bottom)
+            }
         }
     }
     
@@ -160,12 +316,12 @@ struct ChatDetailView: View {
                     .frame(width: 40, height: 4)
                     .padding(.top, 12)
                 
-                Text("Send Money")
+                Text("send money")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(.white)
                 
                 VStack(spacing: 8) {
-                    Text("Amount")
+                    Text("amount")
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.white.opacity(0.6))
                     
@@ -182,7 +338,7 @@ struct ChatDetailView: View {
                 .padding(.vertical, 20)
                 
                 VStack(spacing: 12) {
-                    Text("Add an emoji")
+                    Text("add an emoji")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.white)
                     
@@ -212,7 +368,7 @@ struct ChatDetailView: View {
                     sendAmount = ""
                     UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 }) {
-                    Text("Send")
+                    Text("send")
                         .font(.system(size: 16, weight: .bold))
                         .foregroundColor(Color(hex: "1A1A14"))
                         .frame(maxWidth: .infinity)
@@ -230,21 +386,122 @@ struct ChatDetailView: View {
         .presentationDragIndicator(.hidden)
     }
     
-    private func sendMessage() {
-        guard !inputText.isEmpty else { return }
-        messages.append(Message(text: inputText, isMe: true))
+    private func handleUserMessage(_ text: String) {
+        guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        
+        messages.append(Message(text: text, isMe: true))
         inputText = ""
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        
+        guard chatName == "Rai" else { return }
+        
+        quickReplies = []
+        isTyping = true
+        
+        let normalizedText = text.lowercased()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            isTyping = false
+            
+            if normalizedText.contains("transaction") || normalizedText.contains("spending") || normalizedText.contains("100") || normalizedText.contains("📊") {
+                // 100 Transactions spending analysis
+                messages.append(Message(text: "analyzing your last 100 transactions... 🔍", isMe: false))
+                
+                isTyping = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+                    isTyping = false
+                    messages.append(Message(text: "i noticed you spent 4,200 ALL on coffee in the last month across 14 transactions! ☕️ that's about 15% of your total spending.", isMe: false))
+                    
+                    isTyping = true
+                    DispatchQueue.main.pushDelay(1.2) {
+                        isTyping = false
+                        messages.append(Message(text: "would you like to set a Daily Coffee Cap goal to keep this in check? 🎯", isMe: false))
+                        quickReplies = ["yes, set coffee goal 🎯", "no, i'm good ☕️"]
+                        lastQuestionAsked = .transactionGoalPrompt
+                    }
+                }
+            } else if normalizedText.contains("feature") || normalizedText.contains("explore") || normalizedText.contains("✨") {
+                // Features presentation
+                messages.append(Message(text: "here are some really useful features in the app: \n\n🎨 card customizer: style your debit card with gradient shades!\n\n📈 raipoints: earn rewards by completing quests!\n\n⚡️ kuik splits: split dinner or taxi bills instantly in chat.", isMe: false))
+                
+                isTyping = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+                    isTyping = false
+                    messages.append(Message(text: "which feature would you like to explore first?", isMe: false))
+                    quickReplies = ["card customizer 🎨", "raipoints 📈", "kuik splits ⚡️"]
+                    lastQuestionAsked = .features
+                }
+            } else if normalizedText.contains("feedback") || normalizedText.contains("opinion") || normalizedText.contains("💬") {
+                // Feedback
+                messages.append(Message(text: "i'm all ears! 🦅 what do you think of the app so far, or what features should we add next?", isMe: false))
+                lastQuestionAsked = .feedback
+            } else {
+                // Context-based responses
+                switch lastQuestionAsked {
+                case .transactionGoalPrompt:
+                    if normalizedText.contains("yes") || normalizedText.contains("set") || normalizedText.contains("🎯") {
+                        messages.append(Message(text: "awesome! i've set up a 'Daily Coffee Cap' goal of 300 ALL. you can track it in your goals tracker! 🎯", isMe: false))
+                    } else {
+                        messages.append(Message(text: "no problem! keep enjoying your coffee. let me know if there's anything else you'd like to do! ☕️", isMe: false))
+                    }
+                    resetToMainOptions()
+                    
+                case .features:
+                    if normalizedText.contains("card") || normalizedText.contains("customizer") || normalizedText.contains("🎨") {
+                        messages.append(Message(text: "to customize your card, go to the home screen and tap your debit card. you can swatch different gradients there! 🎨", isMe: false))
+                    } else if normalizedText.contains("point") || normalizedText.contains("raipoints") || normalizedText.contains("📈") {
+                        messages.append(Message(text: "you can view your raipoints and active quests in the rewards tab. completing quests levels you up! 📈", isMe: false))
+                    } else if normalizedText.contains("split") || normalizedText.contains("kuik") || normalizedText.contains("⚡️") {
+                        messages.append(Message(text: "splitting is easy! just tap the '+' button in any chat with a friend (except this one!) to request a split. ⚡️", isMe: false))
+                    } else {
+                        messages.append(Message(text: "sounds good! let me know if you want to explore other features.", isMe: false))
+                    }
+                    resetToMainOptions()
+                    
+                case .feedback:
+                    messages.append(Message(text: "thanks for sharing your feedback! i've saved it and passed it directly to our design & product team. we're always improving! 🚀", isMe: false))
+                    resetToMainOptions()
+                    
+                default:
+                    messages.append(Message(text: "i'm here to help! 🦅 would you like to check your transactions, explore useful features, or leave some feedback?", isMe: false))
+                    quickReplies = ["analyze transactions 📊", "explore features ✨", "give feedback 💬"]
+                    lastQuestionAsked = .welcome
+                }
+            }
+        }
+    }
+    
+    private func resetToMainOptions() {
+        isTyping = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            isTyping = false
+            messages.append(Message(text: "what would you like to explore next?", isMe: false))
+            quickReplies = ["analyze transactions 📊", "explore features ✨", "give feedback 💬"]
+            lastQuestionAsked = .welcome
+        }
+    }
+}
+
+extension DispatchQueue {
+    // Utility helper to safely chain delays inside simulation
+    func pushDelay(_ delay: Double, completion: @escaping () -> Void) {
+        self.asyncAfter(deadline: .now() + delay, execute: completion)
     }
 }
 
 // Subview for Message Bubbles
 struct MessageBubble: View {
     let message: ChatDetailView.Message
+    let chatName: String
     
     var body: some View {
-        HStack {
+        HStack(alignment: .bottom, spacing: 8) {
             if message.isMe { Spacer() }
+            
+            if !message.isMe && chatName == "Rai" {
+                RaiAvatar(size: 28)
+                    .overlay(Circle().stroke(Color.theme.accentPrimary, lineWidth: 1))
+            }
             
             if message.isTransaction {
                 // Transaction Bubble
@@ -259,7 +516,7 @@ struct MessageBubble: View {
                         }
                         
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(message.isMe ? "You sent money" : "Sent you money")
+                            Text(message.isMe ? "you sent money" : "sent you money")
                                 .font(.system(size: 12, weight: .bold))
                                 .foregroundColor(Color(hex: "1A1A14"))
                             Text(String(format: "%.2f ALL", message.amount ?? 0))
@@ -283,7 +540,34 @@ struct MessageBubble: View {
                     .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
             }
             
-            if !message.isMe { Spacer() }
+            if !message.isMe && chatName != "Rai" {
+                // Spacer for other friends' chats
+                Spacer()
+            } else if message.isMe {
+                // No spacer
+            } else if chatName == "Rai" {
+                Spacer()
+            }
         }
+    }
+}
+
+// Zoomed Rai Avatar reusable View
+struct RaiAvatar: View {
+    let size: CGFloat
+    
+    var body: some View {
+        ZStack {
+            Color.black
+            
+            Image("rai_cheer")
+                .resizable()
+                .scaledToFill()
+                .scaleEffect(1.5, anchor: .top)
+                .offset(y: size * 0.12)
+                .frame(width: size, height: size)
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
     }
 }

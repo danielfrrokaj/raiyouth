@@ -1,9 +1,52 @@
-//
-//  OnboardingKYCView.swift
-//  raiyouth
-//
-
 import SwiftUI
+
+// High-tech viewport corner brackets for camera viewfinder
+struct ViewfinderCornerBrackets: View {
+    let color: Color
+    
+    var body: some View {
+        GeometryReader { geometry in
+            let w = geometry.size.width
+            let h = geometry.size.height
+            let len: CGFloat = 20
+            let thick: CGFloat = 3
+            
+            ZStack {
+                // Top Left
+                Path { path in
+                    path.move(to: CGPoint(x: 0, y: len))
+                    path.addLine(to: CGPoint(x: 0, y: 0))
+                    path.addLine(to: CGPoint(x: len, y: 0))
+                }
+                .stroke(color, lineWidth: thick)
+                
+                // Top Right
+                Path { path in
+                    path.move(to: CGPoint(x: w - len, y: 0))
+                    path.addLine(to: CGPoint(x: w, y: 0))
+                    path.addLine(to: CGPoint(x: w, y: len))
+                }
+                .stroke(color, lineWidth: thick)
+                
+                // Bottom Left
+                Path { path in
+                    path.move(to: CGPoint(x: 0, y: h - len))
+                    path.addLine(to: CGPoint(x: 0, y: h))
+                    path.addLine(to: CGPoint(x: len, y: h))
+                }
+                .stroke(color, lineWidth: thick)
+                
+                // Bottom Right
+                Path { path in
+                    path.move(to: CGPoint(x: w - len, y: h))
+                    path.addLine(to: CGPoint(x: w, y: h))
+                    path.addLine(to: CGPoint(x: w, y: h - len))
+                }
+                .stroke(color, lineWidth: thick)
+            }
+        }
+    }
+}
 
 struct OnboardingKYCView: View {
     @Binding var data: OnboardingData
@@ -17,7 +60,7 @@ struct OnboardingKYCView: View {
     }
     
     @State private var currentPhase: KYCPhase = .inputs
-    @State private var laserOffset: CGFloat = -100
+    @State private var laserOffset: CGFloat = -75
     @State private var scanProgress: Double = 0.0
     
     @FocusState private var focusedField: Field?
@@ -25,7 +68,6 @@ struct OnboardingKYCView: View {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     
     enum Field {
-        case name
         case id
     }
     
@@ -52,18 +94,37 @@ struct OnboardingKYCView: View {
             .padding(.horizontal, Theme.Spacing.lg)
             .padding(.top, Theme.Spacing.sm)
             
-            // Inline guide updating based on phase
-            ZogGuideView(
-                pose: currentPhase == .scanning ? .idle : .reassure,
-                speechBubbleText: currentPhase == .scanning ?
+            // Custom guide with rai-security image
+            HStack(alignment: .top, spacing: Theme.Spacing.md) {
+                Image("rai-security")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 96, height: 96)
+                
+                Text(currentPhase == .scanning ?
                     "Hold your document steady in the frame." :
-                    "Just a quick check to keep your new account safe.",
-                isHeroSize: false
-            )
+                    "We need to confirm who you are to open the Trust Gate safely.")
+                    .themeFont(.caption)
+                    .foregroundColor(.theme.textPrimary)
+                    .padding(.horizontal, Theme.Spacing.lg)
+                    .padding(.vertical, Theme.Spacing.md)
+                    .background(
+                        SpeechBubbleShape()
+                            .fill(reduceTransparency ? Color.theme.surface3 : Color.theme.glassFill)
+                    )
+                    .overlay(
+                        SpeechBubbleShape()
+                            .stroke(Color.theme.glassBorder, lineWidth: 1)
+                    )
+                    .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+                    .padding(.top, Theme.Spacing.xs)
+                
+                Spacer()
+            }
             .padding(.horizontal, Theme.Spacing.lg)
             .padding(.top, Theme.Spacing.md)
             
-            // Main Content Area with transition animations
+            // Main Content Area
             ZStack {
                 if currentPhase == .inputs {
                     inputsView
@@ -79,23 +140,8 @@ struct OnboardingKYCView: View {
             
             // Primary button (SOLID yellow) - hidden during scanning
             if currentPhase == .inputs {
-                // Sub-Reward badge
-                HStack(spacing: 6) {
-                    Image(systemName: "sparkles")
-                        .foregroundColor(.theme.accentPrimary)
-                        .font(.system(size: 14, weight: .bold))
-                    Text("+100 RaiPoints")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundColor(.theme.accentPrimary)
-                }
-                .padding(.horizontal, Theme.Spacing.md)
-                .padding(.vertical, 6)
-                .background(Color.theme.accentPrimary.opacity(0.12))
-                .cornerRadius(Theme.Radius.pill)
-                .padding(.bottom, Theme.Spacing.md)
-                
                 Button(action: startScanning) {
-                    Text("Verify account")
+                    Text("Verify identity")
                 }
                 .buttonStyle(PremiumButtonStyle(isEnabled: isValid))
                 .disabled(!isValid)
@@ -103,7 +149,7 @@ struct OnboardingKYCView: View {
                 .padding(.bottom, Theme.Spacing.lg)
             }
         }
-        .ambientGlows()
+        .background(Color.theme.canvas.ignoresSafeArea())
         .onAppear {
             if currentPhase == .inputs {
                 focusedField = .id // Focus document number first since name is read-only
@@ -114,12 +160,11 @@ struct OnboardingKYCView: View {
     // Phase 1: Inputs View
     private var inputsView: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-            Text("Verify your identity")
+            Text("Open the Trust Gate")
                 .themeFont(.h2)
                 .foregroundColor(.theme.textPrimary)
                 .padding(.top, Theme.Spacing.lg)
             
-            // Form Card
             VStack(spacing: Theme.Spacing.lg) {
                 // Name Input
                 VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
@@ -129,17 +174,84 @@ struct OnboardingKYCView: View {
                     
                     HStack {
                         Text(data.fullName)
-                            .themeFont(.body)
-                            .foregroundColor(.theme.textPrimary)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.white)
                         Spacer()
                     }
-                    .padding(.horizontal, Theme.Spacing.md)
-                    .frame(height: 44)
-                    .background(Color.theme.surface3)
-                    .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.sm, style: .continuous))
+                    .padding(.horizontal, 16)
+                    .frame(height: 54)
+                    .background(Color.white.opacity(0.06))
+                    .cornerRadius(Theme.Radius.md)
                     .overlay(
-                        RoundedRectangle(cornerRadius: Theme.Radius.sm, style: .continuous)
-                            .stroke(Color.theme.glassBorder, lineWidth: 1)
+                        RoundedRectangle(cornerRadius: Theme.Radius.md)
+                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    )
+                }
+                
+                // Date of Birth & Phone
+                HStack(spacing: Theme.Spacing.md) {
+                    VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                        Text("Date of birth")
+                            .themeFont(.caption)
+                            .foregroundColor(.theme.textSecondary)
+                        
+                        HStack {
+                            Text(data.dateOfBirth)
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.white)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 16)
+                        .frame(height: 54)
+                        .background(Color.white.opacity(0.06))
+                        .cornerRadius(Theme.Radius.md)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Theme.Radius.md)
+                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                        )
+                    }
+                    
+                    VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                        Text("Phone number")
+                            .themeFont(.caption)
+                            .foregroundColor(.theme.textSecondary)
+                        
+                        HStack {
+                            Text("+355 \(data.phoneNumber)")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.white)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 16)
+                        .frame(height: 54)
+                        .background(Color.white.opacity(0.06))
+                        .cornerRadius(Theme.Radius.md)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Theme.Radius.md)
+                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                        )
+                    }
+                }
+                
+                // Email
+                VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                    Text("Email address")
+                        .themeFont(.caption)
+                        .foregroundColor(.theme.textSecondary)
+                    
+                    HStack {
+                        Text(data.email)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.white)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .frame(height: 54)
+                    .background(Color.white.opacity(0.06))
+                    .cornerRadius(Theme.Radius.md)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Theme.Radius.md)
+                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
                     )
                 }
                 
@@ -149,38 +261,22 @@ struct OnboardingKYCView: View {
                         .themeFont(.caption)
                         .foregroundColor(.theme.textSecondary)
                     
-                    TextField("E.g. A12345678B", text: $data.idNumber)
-                        .themeFont(.body)
-                        .foregroundColor(.theme.textPrimary)
+                    TextField("", text: $data.idNumber, prompt: Text("E.g. A12345678B").foregroundColor(.white.opacity(0.3)))
                         .focused($focusedField, equals: .id)
-                        .padding(.horizontal, Theme.Spacing.md)
-                        .frame(height: 44)
-                        .background(Color.theme.surface3)
-                        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.sm, style: .continuous))
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .frame(height: 54)
+                        .background(Color.white.opacity(0.06))
+                        .cornerRadius(Theme.Radius.md)
                         .overlay(
-                            RoundedRectangle(cornerRadius: Theme.Radius.sm, style: .continuous)
-                                .stroke(focusedField == .id ? Color.theme.accentPrimary : Color.theme.glassBorder, lineWidth: 1)
+                            RoundedRectangle(cornerRadius: Theme.Radius.md)
+                                .stroke(focusedField == .id ? Color.theme.accentPrimary : Color.white.opacity(0.12), lineWidth: 1)
                         )
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.characters)
                 }
-                
-                // Reassurance disclaimer (min contrast 4.5:1 enforced)
-                HStack(alignment: .top, spacing: Theme.Spacing.sm) {
-                    Image(systemName: "lock.shield.fill")
-                        .foregroundColor(.theme.accentTeal)
-                        .font(.system(size: 16))
-                        .padding(.top, 2)
-                    
-                    Text("Your data is encrypted end-to-end and stored securely. We never share your details without your consent.")
-                        .themeFont(.caption)
-                        .foregroundColor(.theme.textPrimary) // High-readability white over glass
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(.top, Theme.Spacing.xs)
             }
-            .padding(Theme.Spacing.lg)
-            .glassCard(radius: Theme.Radius.lg)
         }
         .padding(.horizontal, Theme.Spacing.lg)
     }
@@ -196,25 +292,17 @@ struct OnboardingKYCView: View {
             VStack(spacing: Theme.Spacing.xl) {
                 // Glass scanning window
                 ZStack {
-                    // Dark viewfinder background
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.black.opacity(0.4))
+                        .fill(Color.black.opacity(0.45))
                         .frame(height: 200)
                     
-                    // Card template outline
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(
-                            currentPhase == .success ? Color.theme.success : Color.white.opacity(0.4),
-                            style: StrokeStyle(lineWidth: 2, lineCap: .round, dash: [8, 6])
-                        )
+                    ViewfinderCornerBrackets(color: currentPhase == .success ? Color.theme.success : Color.theme.accentTeal)
                         .frame(width: 260, height: 150)
                     
-                    // Graphic of a card layout inside the guide
-                    Image(systemName: "doc.text.fill")
-                        .font(.system(size: 40))
-                        .foregroundColor(.white.opacity(0.15))
+                    Image(systemName: "person.text.rectangle.fill")
+                        .font(.system(size: 44))
+                        .foregroundColor(.white.opacity(0.12))
                     
-                    // Glowing laser line scanning up and down
                     if currentPhase == .scanning && !reduceMotion {
                         Rectangle()
                             .fill(
@@ -223,20 +311,19 @@ struct OnboardingKYCView: View {
                                     startPoint: .top, endPoint: .bottom
                                 )
                             )
-                            .frame(width: 280, height: 4)
-                            .shadow(color: Color.theme.accentTeal.opacity(0.8), radius: 8)
+                            .frame(width: 270, height: 3)
+                            .shadow(color: Color.theme.accentTeal.opacity(0.8), radius: 6)
                             .offset(y: laserOffset)
                             .onAppear {
                                 withAnimation(
                                     .easeInOut(duration: 1.5)
                                     .repeatForever(autoreverses: true)
                                 ) {
-                                    laserOffset = 100
+                                    laserOffset = 75
                                 }
                             }
                     }
                     
-                    // Scanner success overlay
                     if currentPhase == .success {
                         ZStack {
                             Color.black.opacity(0.5)
@@ -250,9 +337,15 @@ struct OnboardingKYCView: View {
                     }
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 16))
-                .glassCard(radius: Theme.Radius.lg)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(reduceTransparency ? Color.theme.surface2 : Color.white.opacity(0.04))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                )
                 
-                // Scanning status indicator
                 VStack(spacing: Theme.Spacing.xs) {
                     if currentPhase == .scanning {
                         ProgressView()
@@ -287,12 +380,9 @@ struct OnboardingKYCView: View {
             currentPhase = .scanning
         }
         
-        // Haptic start scan
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         
-        // Simulate scan duration
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-            // Haptic success scan
             UINotificationFeedbackGenerator().notificationOccurred(.success)
             
             withAnimation {
@@ -300,9 +390,7 @@ struct OnboardingKYCView: View {
                 scanProgress = 1.0
             }
             
-            // Proceed to next screen
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                data.signupRewardAmount += 100.0
                 onNext()
             }
         }

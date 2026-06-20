@@ -1,8 +1,3 @@
-//
-//  OnboardingCardCustomizationView.swift
-//  raiyouth
-//
-
 import SwiftUI
 
 struct OnboardingCardCustomizationView: View {
@@ -12,8 +7,9 @@ struct OnboardingCardCustomizationView: View {
     
     // Drag state for the 3D tilt effect
     @State private var dragOffset: CGSize = .zero
+    @FocusState private var isAliasFocused: Bool
     
-    // Card styles
+    // Card styles kept for ContentView compile compatibility
     enum CardColor: String, CaseIterable {
         case yellow
         case gray
@@ -58,6 +54,10 @@ struct OnboardingCardCustomizationView: View {
         }
     }
     
+    var isFormValid: Bool {
+        !data.aliasName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -78,161 +78,149 @@ struct OnboardingCardCustomizationView: View {
             // Inline guide
             ZogGuideView(
                 pose: .idle,
-                speechBubbleText: "Let's design your debit card. Pick a color that matches your vibe.",
+                speechBubbleText: "Let's forge your debit card. Type the alias you'd like printed on your card to begin.",
                 isHeroSize: false
             )
             .padding(.horizontal, Theme.Spacing.lg)
             .padding(.top, Theme.Spacing.md)
             
-            Spacer()
-            
-            // Interactive Debit Card Preview (3D tilt on drag)
-            let selectedCardColor = CardColor(rawValue: data.cardColor) ?? .yellow
-            
-            VStack(spacing: Theme.Spacing.xxl) {
-                // Card View with 3D Tilt Effect
-                VStack(alignment: .leading) {
-                    HStack {
-                        if selectedCardColor == .yellow {
-                            Spacer()
-                            Image(systemName: "wave.3.right")
-                                .font(.system(size: 16, weight: .semibold))
-                                .rotationEffect(.degrees(-90))
-                        } else {
-                            Text("rai")
-                                .font(.system(size: 20, weight: .semibold, design: .rounded))
-                                .italic()
-                            + Text("youth")
-                                .font(.system(size: 20, weight: .regular, design: .rounded))
-                            
-                            Spacer()
-                            
-                            Image(systemName: "wave.3.right")
-                                .font(.system(size: 16, weight: .semibold))
-                                .rotationEffect(.degrees(-90))
-                        }
-                    }
-                    .foregroundColor(selectedCardColor.textColor)
-                    
-                    Spacer()
-                    
-                    // Chip graphic
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(
-                            LinearGradient(
-                                colors: [Color(hex: "F2D472"), Color(hex: "C5A03D")],
-                                startPoint: .topLeading, endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 40, height: 30)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 4)
-                                .stroke(Color.black.opacity(0.1), lineWidth: 1)
-                        )
-                        .padding(.bottom, Theme.Spacing.md)
-                    
-                    // Card numbers formatted using SF Pro Display/Rounded, tabular figures, tracking -0.5
-                    Text("4218  9012  5542  \(String(format: "%04d", Calendar.current.component(.year, from: Date())))")
-                        .font(.system(size: 19, weight: .medium, design: .monospaced))
-                        .tracking(-0.5)
-                        .foregroundColor(selectedCardColor.textColor)
-                        .padding(.bottom, Theme.Spacing.xs)
-                    
-                    HStack {
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: Theme.Spacing.lg) {
+                    // Fixed Brand Yellow card preview (no swatches)
+                    VStack(spacing: Theme.Spacing.xl) {
+                        // Card View with 3D Tilt Effect
                         VStack(alignment: .leading) {
-                            Text("Card holder")
-                                .themeFont(.micro)
-                                .foregroundColor(selectedCardColor.secondaryTextColor)
-                            Text(data.fullName.isEmpty ? "Your name" : data.fullName.sentenceCased)
-                                .themeFont(.title)
-                                .foregroundColor(selectedCardColor.textColor)
-                        }
-                        
-                        Spacer()
-                        
-                        VStack(alignment: .trailing) {
-                            Text("Expires")
-                                .themeFont(.micro)
-                                .foregroundColor(selectedCardColor.secondaryTextColor)
-                            Text("06/31")
-                                .themeFont(.title)
-                                .foregroundColor(selectedCardColor.textColor)
-                        }
-                    }
-                }
-                .padding(Theme.Spacing.xxl)
-                .frame(width: 320, height: 200)
-                .background(
-                    Group {
-                        if selectedCardColor == .yellow {
-                            Image("card")
-                                .resizable()
-                                .scaledToFill()
-                        } else {
-                            selectedCardColor.gradient
-                        }
-                    }
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
-                )
-                .shadow(color: Color.black.opacity(0.4), radius: 20, x: 0, y: 10)
-                // 3D rotation based on drag offset
-                .rotation3DEffect(
-                    .degrees(Double(dragOffset.width / 15)),
-                    axis: (x: 0.0, y: 1.0, z: 0.0)
-                )
-                .rotation3DEffect(
-                    .degrees(Double(-dragOffset.height / 15)),
-                    axis: (x: 1.0, y: 0.0, z: 0.0)
-                )
-                .gesture(
-                    DragGesture()
-                        .onChanged { value in
-                            withAnimation(.interactiveSpring()) {
-                                dragOffset = value.translation
+                            HStack {
+                                Spacer()
+                                Image(systemName: "wave.3.right")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .rotationEffect(.degrees(-90))
                             }
-                        }
-                        .onEnded { _ in
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                                dragOffset = .zero
-                            }
-                        }
-                )
-                
-                // Color Swatches
-                HStack(spacing: Theme.Spacing.xxl) {
-                    ForEach(CardColor.allCases, id: \.self) { color in
-                        Button(action: {
-                            withAnimation(.spring(response: 0.22, dampingFraction: 0.8)) {
-                                data.cardColor = color.rawValue
-                            }
-                        }) {
-                            ZStack {
-                                Circle()
-                                    .fill(color.gradient)
-                                    .frame(width: 48, height: 48)
-                                    .overlay(
-                                        Circle()
-                                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                            .foregroundColor(Color.theme.textOnAccentYellow)
+                            
+                            Spacer()
+                            
+                            // Chip graphic
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color(hex: "F2D472"), Color(hex: "C5A03D")],
+                                        startPoint: .topLeading, endPoint: .bottomTrailing
                                     )
+                                )
+                                .frame(width: 40, height: 30)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .stroke(Color.black.opacity(0.1), lineWidth: 1)
+                                )
+                                .padding(.bottom, Theme.Spacing.md)
+                            
+                            // Card numbers
+                            Text("4218  9012  5542  \(String(format: "%04d", Calendar.current.component(.year, from: Date())))")
+                                .font(.system(size: 19, weight: .medium, design: .monospaced))
+                                .tracking(-0.5)
+                                .foregroundColor(Color.theme.textOnAccentYellow)
+                                .padding(.bottom, Theme.Spacing.xs)
+                            
+                            HStack {
+                                VStack(alignment: .leading) {
+                                    Text("Card holder")
+                                        .themeFont(.micro)
+                                        .foregroundColor(Color.theme.textOnAccentYellow.opacity(0.6))
+                                    Text(data.aliasName.isEmpty ? "Your alias" : data.aliasName.sentenceCased)
+                                        .themeFont(.title)
+                                        .foregroundColor(Color.theme.textOnAccentYellow)
+                                }
                                 
-                                if data.cardColor == color.rawValue {
-                                    Circle()
-                                        .stroke(Color.theme.accentPrimary, lineWidth: 3)
-                                        .frame(width: 58, height: 58)
-                                        .transition(.scale.combined(with: .opacity))
+                                Spacer()
+                                
+                                VStack(alignment: .trailing) {
+                                    Text("Expires")
+                                        .themeFont(.micro)
+                                        .foregroundColor(Color.theme.textOnAccentYellow.opacity(0.6))
+                                    Text("06/31")
+                                        .themeFont(.title)
+                                        .foregroundColor(Color.theme.textOnAccentYellow)
                                 }
                             }
                         }
-                        .buttonStyle(PlainButtonStyle())
+                        .padding(Theme.Spacing.xxl)
+                        .frame(width: 320, height: 200)
+                        .background(
+                            LinearGradient(
+                                colors: [Color.theme.accentPrimary, Color.theme.accentPrimaryDeep],
+                                startPoint: .topLeading, endPoint: .bottomTrailing
+                            )
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                        )
+                        .shadow(color: Color.black.opacity(0.4), radius: 20, x: 0, y: 10)
+                        .rotation3DEffect(
+                            .degrees(Double(dragOffset.width / 15)),
+                            axis: (x: 0.0, y: 1.0, z: 0.0)
+                        )
+                        .rotation3DEffect(
+                            .degrees(Double(-dragOffset.height / 15)),
+                            axis: (x: 1.0, y: 0.0, z: 0.0)
+                        )
+                        .gesture(
+                            DragGesture()
+                                .onChanged { value in
+                                    withAnimation(.interactiveSpring()) {
+                                        dragOffset = value.translation
+                                    }
+                                }
+                                .onEnded { _ in
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                                        dragOffset = .zero
+                                    }
+                                }
+                        )
+                    }
+                    
+                    // Alias Name Input Box
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Choose a card holder name (alias)")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(.white.opacity(0.8))
+                        
+                        TextField("", text: $data.aliasName, prompt: Text("Enter your card alias").foregroundColor(.white.opacity(0.3)))
+                            .focused($isAliasFocused)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 16)
+                            .frame(height: 50)
+                            .background(Color.white.opacity(0.06))
+                            .cornerRadius(Theme.Radius.md)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: Theme.Radius.md)
+                                    .stroke(isAliasFocused ? Color.theme.accentPrimary : Color.white.opacity(0.12), lineWidth: 1)
+                            )
+                    }
+                    .padding(.horizontal, Theme.Spacing.lg)
+                    .padding(.top, Theme.Spacing.md)
+                    
+                    if isFormValid {
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark.seal.fill")
+                                .foregroundColor(.theme.accentPrimary)
+                            Text("Card Forge Unlocked")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.theme.accentPrimary.opacity(0.15))
+                        .cornerRadius(10)
+                        .transition(.scale.combined(with: .opacity))
+                        .padding(.top, 8)
                     }
                 }
-                .padding(.top, Theme.Spacing.md)
+                .padding(.bottom, 24)
             }
-            .padding(.horizontal, Theme.Spacing.lg)
             
             Spacer()
             
@@ -240,11 +228,12 @@ struct OnboardingCardCustomizationView: View {
             Button(action: onNext) {
                 Text("Looks good")
             }
-            .buttonStyle(PremiumButtonStyle(isEnabled: true))
+            .buttonStyle(PremiumButtonStyle(isEnabled: isFormValid))
+            .disabled(!isFormValid)
             .padding(.horizontal, Theme.Spacing.xxl)
             .padding(.bottom, Theme.Spacing.xxl)
         }
-        .ambientGlows()
+        .background(Color.theme.canvas.ignoresSafeArea())
     }
 }
 

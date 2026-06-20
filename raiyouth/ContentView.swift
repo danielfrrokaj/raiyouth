@@ -298,6 +298,8 @@ struct HomeTabView: View {
         return .white
     }
     
+    private var totalBalance: Double { 120.0 + userSignupRewardAmount }
+
     private var accountSecondaryTextColor: Color {
         if selectedAccountIndex == 0 {
             switch accountTheme {
@@ -511,7 +513,6 @@ struct HomeTabView: View {
     }
 
     @ViewBuilder private var balanceSection: some View {
-        let totalBalance = 120.0 + userSignupRewardAmount
         VStack(spacing: Theme.Spacing.lg) {
             ZStack {
                 // ALL Account
@@ -904,7 +905,10 @@ struct HomeTabView: View {
                 }
                 .buttonStyle(PlainButtonStyle())
                 
-                Text("0 ALL").font(.system(size: 32, weight: .bold, design: .rounded)).foregroundColor(.white)
+                Text(selectedAccountIndex == 0
+                     ? String(format: "%.2f ALL", totalBalance * 100)
+                     : String(format: "%.2f €", totalBalance))
+                    .font(.system(size: 32, weight: .bold, design: .rounded)).foregroundColor(.white)
                 VStack(spacing: 16) {
                     HStack(spacing: 16) {
                         Circle().fill(Color.theme.accentPrimary).frame(width: 36, height: 36)
@@ -912,7 +916,10 @@ struct HomeTabView: View {
                             .overlay(Image(systemName: "banknote.fill").foregroundColor(.white).font(.system(size: 14)))
                         Text("Cash").font(.system(size: 16, weight: .medium)).foregroundColor(.white)
                         Spacer()
-                        Text("0 ALL").font(.system(size: 16, weight: .regular)).foregroundColor(.white)
+                        Text(selectedAccountIndex == 0
+                             ? String(format: "%.2f ALL", totalBalance * 100)
+                             : String(format: "%.2f €", totalBalance))
+                            .font(.system(size: 16, weight: .regular)).foregroundColor(.white)
                     }
                     HStack(spacing: 16) {
                         Circle().fill(Color.theme.accentPrimary).frame(width: 36, height: 36)

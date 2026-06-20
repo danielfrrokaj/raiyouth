@@ -18,7 +18,7 @@ struct OnboardingSelfieView: View {
     
     @State private var phase: SelfiePhase = .preview
     @State private var scanProgress = 0.0
-    @State private var rotationAngle = 0.0
+    @State private var pulseScale: CGFloat = 1.0
     
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -62,7 +62,7 @@ struct OnboardingSelfieView: View {
                 VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                     HStack {
                         Text("Take a selfie")
-                            .themeFont(.h1)
+                            .font(.system(size: 28, weight: .bold, design: .rounded))
                             .foregroundColor(.theme.textPrimary)
                         Spacer()
                     }
@@ -75,7 +75,23 @@ struct OnboardingSelfieView: View {
                 
                 // Circular viewfinder
                 ZStack {
-                    // Outer spinning loading indicator ring
+                    // Outer breathing pulsing indicator ring
+                    Circle()
+                        .stroke(
+                            phase == .success ? Color.theme.success.opacity(0.18) : Color.theme.accentTeal.opacity(0.12),
+                            lineWidth: 8
+                        )
+                        .frame(width: 220, height: 220)
+                        .scaleEffect(phase == .success ? 1.0 : pulseScale)
+                        .onAppear {
+                            if !reduceMotion && phase != .success {
+                                withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
+                                    pulseScale = 1.08
+                                }
+                            }
+                        }
+                    
+                    // Progress indicator ring
                     Circle()
                         .stroke(Color.white.opacity(0.12), lineWidth: 4)
                         .frame(width: 220, height: 220)
@@ -110,29 +126,17 @@ struct OnboardingSelfieView: View {
                         }
                     }
                     .frame(width: 200, height: 200)
-                    .background(Color.theme.surface3)
+                    .background(
+                        RoundedRectangle(cornerRadius: 100)
+                            .fill(reduceTransparency ? Color.theme.surface3 : Color.white.opacity(0.04))
+                    )
                     .clipShape(Circle())
-                    .overlay(Circle().stroke(Color.theme.glassBorder, lineWidth: 1))
+                    .overlay(Circle().stroke(Color.white.opacity(0.1), lineWidth: 1))
                 }
                 .padding(.vertical, Theme.Spacing.md)
             }
             
             Spacer()
-            
-            // Sub-Reward badge
-            HStack(spacing: 6) {
-                Image(systemName: "sparkles")
-                    .foregroundColor(.theme.accentPrimary)
-                    .font(.system(size: 14, weight: .bold))
-                Text("+100 RaiPoints")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .foregroundColor(.theme.accentPrimary)
-            }
-            .padding(.horizontal, Theme.Spacing.md)
-            .padding(.vertical, 6)
-            .background(Color.theme.accentPrimary.opacity(0.12))
-            .cornerRadius(Theme.Radius.pill)
-            .padding(.bottom, Theme.Spacing.lg)
             
             // Capture Button (Revolut-like camera shutter)
             if phase == .preview {
@@ -157,6 +161,7 @@ struct OnboardingSelfieView: View {
                 EmptyView()
             }
         }
+        .background(Color.theme.canvas.ignoresSafeArea())
         .ambientGlows()
     }
     
@@ -180,7 +185,6 @@ struct OnboardingSelfieView: View {
             
             // Proceed to final success screen
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                data.signupRewardAmount += 100.0
                 onNext()
             }
         }
