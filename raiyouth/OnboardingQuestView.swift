@@ -67,7 +67,7 @@ struct OnboardingQuestView: View {
                     .foregroundColor(.theme.textPrimary)
                     .padding(.top, Theme.Spacing.lg)
                 
-                Text("Pick why you're joining RaiYouth. This will shape your island and dashboards.")
+                Text("Pick why you're joining RaiYouth. This personalises your dashboard and goals.")
                     .themeFont(.caption)
                     .foregroundColor(.theme.textSecondary)
                 

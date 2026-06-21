@@ -76,7 +76,7 @@ struct ChatDetailView: View {
                     ZStack(alignment: .bottomTrailing) {
                         if chatName == "Rai" {
                             RaiAvatar(size: 40)
-                                .overlay(Circle().stroke(Color.theme.accentPrimary, lineWidth: 1))
+                                 .overlay(Circle().stroke(Color.theme.accentPrimary, lineWidth: 1))
                         } else {
                             let initials = chatName.split(separator: " ").compactMap { $0.first }.map { String($0) }.joined()
                             Circle()

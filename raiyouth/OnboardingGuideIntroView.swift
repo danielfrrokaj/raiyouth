@@ -8,11 +8,11 @@ struct OnboardingGuideIntroView: View {
     var personaTitle: String { "Rai" }
     
     var personaDescription: String {
-        "Rai is your personal money guide. As you build your island, verify your identity, and set up your wallet, Rai will be by your side, helping you save automatically and secure your assets."
+        "Rai is your personal money guide. As you set up your account, verify your identity, and build your wallet, Rai will be by your side — helping you save automatically and stay on top of your money."
     }
     
     var speechBubbleText: String {
-        "Let's build your Money Island together!"
+        "Let's get you set up!"
     }
     
     var body: some View {

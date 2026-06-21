@@ -36,7 +36,7 @@ struct OnboardingEmailView: View {
                     .foregroundColor(.theme.textPrimary)
                     .padding(.top, Theme.Spacing.lg)
                 
-                Text("Enter your email address. This acts as a secure backup beacon to recover your island if needed.")
+                Text("We'll use this to recover your account if you ever get locked out, and to send you important updates.")
                     .themeFont(.caption)
                     .foregroundColor(.theme.textSecondary)
                 

@@ -10,7 +10,8 @@ import SwiftUI
 struct OnboardingStoryView: View {
     let onNext: () -> Void
     let onBack: () -> Void
-    
+    var showBack: Bool = true
+
     @State private var animateItems = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -18,25 +19,32 @@ struct OnboardingStoryView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Header Bar
-            HStack {
-                Button(action: onBack) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "chevron.left")
-                        Text("Back")
+            if showBack {
+                HStack {
+                    Button(action: onBack) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "chevron.left")
+                            Text("Back")
+                        }
+                        .themeFont(.caption)
+                        .foregroundColor(.theme.textSecondary)
                     }
-                    .themeFont(.caption)
-                    .foregroundColor(.theme.textSecondary)
+                    Spacer()
                 }
-                Spacer()
+                .padding(.horizontal, Theme.Spacing.lg)
+                .padding(.top, Theme.Spacing.xs)
+                .padding(.bottom, Theme.Spacing.xs)
             }
-            .padding(.horizontal, Theme.Spacing.lg)
-            .padding(.top, Theme.Spacing.xs)
-            .padding(.bottom, Theme.Spacing.xs)
 
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: Theme.Spacing.xl) {
                     // Title Header
                     VStack(spacing: 6) {
+                        Text("Meet Rai!")
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .foregroundColor(.theme.accentTeal)
+                            .multilineTextAlignment(.center)
+
                         Text("Rai Needs You.")
                             .font(.system(size: 30, weight: .heavy, design: .rounded))
                             .foregroundColor(.theme.textPrimary)

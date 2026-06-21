@@ -34,12 +34,12 @@ struct OnboardingAddressView: View {
             .padding(.top, Theme.Spacing.xs)
             
             VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-                Text("Set Home Base")
+                Text("Where do you live?")
                     .font(.system(size: 28, weight: .bold, design: .rounded))
                     .foregroundColor(.theme.textPrimary)
                     .padding(.top, Theme.Spacing.lg)
-                
-                Text("Enter your residential address to anchor your island home in the real world.")
+
+                Text("Your current residential address. Required to open your account.")
                     .themeFont(.caption)
                     .foregroundColor(.theme.textSecondary)
                     .lineSpacing(3)
@@ -131,7 +131,7 @@ struct OnboardingAddressView: View {
                     HStack(spacing: 8) {
                         Image(systemName: "checkmark.seal.fill")
                             .foregroundColor(.theme.accentPrimary)
-                        Text("Home Base Set")
+                        Text("Address confirmed")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundColor(.white)
                     }

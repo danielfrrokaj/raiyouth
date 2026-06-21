@@ -97,57 +97,42 @@ struct OnboardingSuccessView: View {
                     
                     Spacer()
                 } else {
-                    // Vault Unlocked: Show Money Won & Island Unlocked Details
-                    ScrollView(.vertical, showsIndicators: false) {
-                        VStack(spacing: Theme.Spacing.lg) {
-                            // Reward Amount Card
-                            VStack(spacing: 4) {
-                                Text("Bonus reward")
-                                    .themeFont(.caption)
-                                    .foregroundColor(.theme.accentPrimary)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 4)
-                                    .background(Color.theme.accentPrimary.opacity(0.12))
-                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                
-                                Text(String(format: "+%.2f €", data.signupRewardAmount))
-                                    .themeFont(.display(value: data.signupRewardAmount))
-                                    .foregroundColor(.theme.accentPrimary)
-                            }
-                            .padding(.top, 8)
-                            
-                            // Setup Summary Checklist (Money Island Completed Nodes)
-                            VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-                                Text("Your Money Island summary")
-                                    .themeFont(.title)
-                                    .foregroundColor(.white)
-                                    .padding(.bottom, 4)
-                                
-                                VStack(spacing: 12) {
-                                    summaryRow(icon: "flag.fill", label: "Guide introduced", value: "Rai unlocked")
-                                    summaryRow(icon: "antenna.radiowaves.left.and.right", label: "Signal Tower active", value: "verified")
-                                    summaryRow(icon: "house.fill", label: "Profile House built", value: data.aliasName.isEmpty ? data.firstName : data.aliasName)
-                                    summaryRow(icon: "lock.shield.fill", label: "Trust Gate open", value: "identity confirmed")
-                                    summaryRow(icon: "mappin.and.ellipse", label: "Home Base set", value: "address verified")
-                                    summaryRow(icon: "lock.fill", label: "Vault locked", value: "protected")
-                                }
-                            }
-                            .padding(Theme.Spacing.lg)
-                            .glassCard(radius: Theme.Radius.lg)
-                            .padding(.horizontal, 2)
+                    // Vault Unlocked: Reward
+                    VStack(spacing: Theme.Spacing.lg) {
+                        Spacer()
+
+                        // Reward Amount
+                        VStack(spacing: 12) {
+                            Text("Signup Bonus")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(.theme.accentPrimary)
+                                .kerning(1.4)
+                                .textCase(.uppercase)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 5)
+                                .background(Color.theme.accentPrimary.opacity(0.12))
+                                .clipShape(Capsule())
+
+                            Text(String(format: "+%.2f €", data.signupRewardAmount))
+                                .font(.system(size: 56, weight: .heavy, design: .rounded))
+                                .foregroundColor(.theme.accentPrimary)
+
+                            Text("Deposited into your wallet")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(.theme.textSecondary)
                         }
-                        .padding(.vertical, 8)
+                        .padding(.top, 8)
+
+                        Spacer()
+
+                        // Enter My App CTA
+                        Button(action: onFinish) {
+                            Text("Enter my app")
+                        }
+                        .buttonStyle(PremiumButtonStyle(isEnabled: true))
+                        .padding(.horizontal, Theme.Spacing.lg)
+                        .padding(.bottom, Theme.Spacing.xl)
                     }
-                    
-                    Spacer()
-                    
-                    // Enter My App CTA
-                    Button(action: onFinish) {
-                        Text("Enter my app")
-                    }
-                    .buttonStyle(PremiumButtonStyle(isEnabled: true))
-                    .padding(.horizontal, Theme.Spacing.lg)
-                    .padding(.bottom, Theme.Spacing.xl)
                 }
             }
             .padding(.horizontal, Theme.Spacing.lg)

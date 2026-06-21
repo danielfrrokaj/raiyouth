@@ -103,7 +103,7 @@ struct OnboardingKYCView: View {
                 
                 Text(currentPhase == .scanning ?
                     "Hold your document steady in the frame." :
-                    "We need to confirm who you are to open the Trust Gate safely.")
+                    "We need to verify your identity. This is required by law to open your account.")
                     .themeFont(.caption)
                     .foregroundColor(.theme.textPrimary)
                     .padding(.horizontal, Theme.Spacing.lg)
@@ -160,7 +160,7 @@ struct OnboardingKYCView: View {
     // Phase 1: Inputs View
     private var inputsView: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
-            Text("Open the Trust Gate")
+            Text("Verify your identity")
                 .themeFont(.h2)
                 .foregroundColor(.theme.textPrimary)
                 .padding(.top, Theme.Spacing.lg)

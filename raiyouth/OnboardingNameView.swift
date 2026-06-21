@@ -38,12 +38,12 @@ struct OnboardingNameView: View {
             .padding(.top, Theme.Spacing.xs)
             
             VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-                Text("Build Profile House")
+                Text("What's your name?")
                     .font(.system(size: 28, weight: .bold, design: .rounded))
                     .foregroundColor(.theme.textPrimary)
                     .padding(.top, Theme.Spacing.lg)
-                
-                Text("Enter your legal name as it appears on your official documents to anchor your island profile.")
+
+                Text("Enter your legal name exactly as it appears on your ID.")
                     .themeFont(.caption)
                     .foregroundColor(.theme.textSecondary)
                 
@@ -91,7 +91,7 @@ struct OnboardingNameView: View {
                     HStack(spacing: 8) {
                         Image(systemName: "checkmark.seal.fill")
                             .foregroundColor(.theme.accentPrimary)
-                        Text("Profile House Built")
+                        Text("Name confirmed")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundColor(.white)
                     }

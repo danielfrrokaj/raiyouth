@@ -15,10 +15,9 @@ struct MessagesView: View {
     }
     
     @State private var chats = [
-        ChatMessage(name: "Rai", lastMessage: "I've analyzed your last 100 transactions...", time: "18:48", unread: true, pendingSplit: nil, isOnline: true),
-        ChatMessage(name: "Sarah Jenkins", lastMessage: "Let's split the coffee bill from earlier!", time: "12:30", unread: true, pendingSplit: 4.50, isOnline: true),
+        ChatMessage(name: "Sarah Jenkins", lastMessage: "Let's split the coffee bill from earlier!", time: "12:30", unread: false, pendingSplit: nil, isOnline: true),
         ChatMessage(name: "Alex Vlasic", lastMessage: "Reacted 👍 to your transfer.", time: "Yesterday", unread: false, pendingSplit: nil, isOnline: true),
-        ChatMessage(name: "Friday Dinner Group", lastMessage: "Daniel: I paid for the taxi.", time: "Friday", unread: false, pendingSplit: 18.00, isOnline: false),
+        ChatMessage(name: "Friday Dinner Group", lastMessage: "Daniel: I paid for the taxi.", time: "Friday", unread: false, pendingSplit: nil, isOnline: false),
         ChatMessage(name: "Mom", lastMessage: "Have a safe flight back!", time: "Thursday", unread: false, pendingSplit: nil, isOnline: false)
     ]
     
@@ -129,20 +128,15 @@ struct MessagesView: View {
                                 NavigationLink(destination: ChatDetailView(chatName: chat.name, isOnline: chat.isOnline)) {
                                     HStack(spacing: Theme.Spacing.md) {
                                         ZStack(alignment: .bottomTrailing) {
-                                            if chat.name == "Rai" {
-                                                RaiAvatar(size: 44)
-                                                    .overlay(Circle().stroke(Color.theme.accentPrimary, lineWidth: 1.5))
-                                            } else {
-                                                let initials = chat.name.split(separator: " ").compactMap { $0.first }.map { String($0) }.joined()
-                                                Circle()
-                                                    .fill(chat.unread ? Color.theme.accentPrimary : Color.white.opacity(0.12))
-                                                    .frame(width: 44, height: 44)
-                                                    .overlay(
-                                                        Text(initials)
-                                                            .font(.system(size: 14, weight: .bold))
-                                                            .foregroundColor(chat.unread ? Color(hex: "1A1A14") : .white)
-                                                    )
-                                            }
+                                            let initials = chat.name.split(separator: " ").compactMap { $0.first }.map { String($0) }.joined()
+                                            Circle()
+                                                .fill(Color.white.opacity(0.12))
+                                                .frame(width: 44, height: 44)
+                                                .overlay(
+                                                    Text(initials)
+                                                        .font(.system(size: 14, weight: .bold))
+                                                        .foregroundColor(.white)
+                                                )
                                             
                                             if chat.isOnline {
                                                 Circle()
@@ -156,26 +150,13 @@ struct MessagesView: View {
                                         }
                                         
                                         VStack(alignment: .leading, spacing: 3) {
-                                            HStack(spacing: 6) {
-                                                Text(chat.name)
-                                                    .font(.system(size: 15, weight: chat.unread ? .bold : .semibold))
-                                                    .foregroundColor(.white)
-                                                
-                                                if chat.name == "Rai" {
-                                                    // Small badge next to the name, no AI text
-                                                    Text("assistant")
-                                                        .font(.system(size: 10, weight: .bold))
-                                                        .foregroundColor(Color.theme.accentPrimary)
-                                                        .padding(.horizontal, 6)
-                                                        .padding(.vertical, 2)
-                                                        .background(Color.theme.accentPrimary.opacity(0.15))
-                                                        .cornerRadius(4)
-                                                }
-                                            }
+                                            Text(chat.name)
+                                                .font(.system(size: 15, weight: .semibold))
+                                                .foregroundColor(.white)
                                             
                                             Text(chat.lastMessage)
                                                 .font(.system(size: 12))
-                                                .foregroundColor(chat.unread ? .white : .white.opacity(0.6))
+                                                .foregroundColor(.white.opacity(0.6))
                                                 .lineLimit(1)
                                         }
                                         
@@ -185,16 +166,6 @@ struct MessagesView: View {
                                             Text(chat.time)
                                                 .font(.system(size: 11))
                                                 .foregroundColor(.white.opacity(0.5))
-                                            
-                                            if chat.unread {
-                                                Circle()
-                                                    .fill(Color.theme.accentPrimary)
-                                                    .frame(width: 8, height: 8)
-                                            } else {
-                                                Image(systemName: "camera")
-                                                    .foregroundColor(.white.opacity(0.4))
-                                                    .font(.system(size: 15))
-                                            }
                                         }
                                     }
                                     .padding(.vertical, 14)
@@ -202,75 +173,6 @@ struct MessagesView: View {
                                 }
                                 .buttonStyle(PlainButtonStyle())
                                 
-                                // Pending split request card
-                                if let split = chat.pendingSplit {
-                                    HStack(spacing: Theme.Spacing.md) {
-                                        ZStack {
-                                            Circle()
-                                                .fill(Color.theme.accentPrimary.opacity(0.12))
-                                                .frame(width: 32, height: 32)
-                                            Image(systemName: "plus.forwardslash.minus")
-                                                .foregroundColor(Color.theme.accentPrimary)
-                                                .font(.system(size: 12, weight: .bold))
-                                        }
-                                        
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text("Split request")
-                                                .font(.system(size: 11, weight: .bold))
-                                                .foregroundColor(.white)
-                                            Text(String(format: "%.2f € requested", split))
-                                                .font(.system(size: 10))
-                                                .foregroundColor(.white.opacity(0.7))
-                                        }
-                                        
-                                        Spacer()
-                                        
-                                        HStack(spacing: 8) {
-                                            Button(action: {
-                                                if let index = chats.firstIndex(where: { $0.id == chat.id }) {
-                                                    chats[index].pendingSplit = nil
-                                                }
-                                                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                                            }) {
-                                                Text("Pay")
-                                                    .font(.system(size: 10, weight: .bold))
-                                                    .foregroundColor(Color(hex: "1A1A14"))
-                                                    .padding(.horizontal, 10)
-                                                    .padding(.vertical, 5)
-                                                    .background(Color.theme.accentPrimary)
-                                                    .cornerRadius(10)
-                                            }
-                                            
-                                            Button(action: {
-                                                if let index = chats.firstIndex(where: { $0.id == chat.id }) {
-                                                    chats[index].pendingSplit = nil
-                                                }
-                                                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                                            }) {
-                                                Text("Decline")
-                                                    .font(.system(size: 10, weight: .bold))
-                                                    .foregroundColor(.white)
-                                                    .padding(.horizontal, 8)
-                                                    .padding(.vertical, 5)
-                                                    .background(.ultraThinMaterial)
-                                                    .cornerRadius(10)
-                                                    .overlay(
-                                                        RoundedRectangle(cornerRadius: 10)
-                                                            .stroke(Color.white.opacity(0.15), lineWidth: 1)
-                                                    )
-                                            }
-                                        }
-                                    }
-                                    .padding(8)
-                                    .background(Color.white.opacity(0.04))
-                                    .cornerRadius(10)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .stroke(Color.white.opacity(0.08), lineWidth: 1)
-                                    )
-                                    .padding(.horizontal, Theme.Spacing.lg)
-                                    .padding(.bottom, 12)
-                                }
                             }
                             
                             if idx < chats.count - 1 {

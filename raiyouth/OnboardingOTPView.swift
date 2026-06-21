@@ -32,12 +32,12 @@ struct OnboardingOTPView: View {
             .padding(.top, Theme.Spacing.xs)
             
             VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-                Text("Activate Signal Tower")
+                Text("Enter your code")
                     .font(.system(size: 28, weight: .bold, design: .rounded))
                     .foregroundColor(.theme.textPrimary)
                     .padding(.top, Theme.Spacing.lg)
-                
-                Text("Enter the 6-digit verification code sent to +355 \(data.phoneNumber) to activate your tower.")
+
+                Text("We sent a 6-digit code to +355 \(data.phoneNumber).")
                     .themeFont(.caption)
                     .foregroundColor(.theme.textSecondary)
                 
@@ -114,7 +114,7 @@ struct OnboardingOTPView: View {
                     HStack(spacing: 8) {
                         Image(systemName: "checkmark.seal.fill")
                             .foregroundColor(.theme.accentPrimary)
-                        Text("Signal Tower Activated")
+                        Text("Phone verified")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundColor(.white)
                     }

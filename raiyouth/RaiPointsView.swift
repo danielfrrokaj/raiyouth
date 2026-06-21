@@ -5,6 +5,9 @@ struct RaiPointsView: View {
     @State private var points = 320
     @State private var selectedProduct: String = "eSIM"
     @State private var redeemedItem: String? = nil
+    @State private var coinAnimating = false
+    @State private var pendingItem: RewardItem? = nil
+    @State private var showConfirmation = false
     
     // Product data matching the catalog selection
     struct RewardItem: Identifiable {
@@ -62,10 +65,8 @@ struct RaiPointsView: View {
                         .foregroundColor(.white.opacity(0.5))
                     
                     HStack(spacing: 8) {
-                        Image(systemName: "r.circle.fill")
-                            .font(.system(size: 28))
-                            .foregroundColor(Color.theme.accentPrimary)
-                        
+                        RaiCoinView(size: 44, isAnimating: coinAnimating)
+
                         Text("\(points)")
                             .font(.system(size: 44, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
@@ -252,12 +253,11 @@ struct RaiPointsView: View {
                             
                             Button(action: {
                                 if points >= item.cost {
-                                    points -= item.cost
-                                    redeemedItem = item.title
-                                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                    pendingItem = item
+                                    showConfirmation = true
                                 }
                             }) {
-                                Text("\(item.cost) pts")
+                                Text("\(item.cost) RaiPoints")
                                     .font(.system(size: 13, weight: .bold))
                                     .foregroundColor(Color.theme.textOnAccentYellow)
                                     .frame(maxWidth: .infinity)
@@ -276,6 +276,30 @@ struct RaiPointsView: View {
                 }
                 .padding(.horizontal, Theme.Spacing.lg)
                 .padding(.bottom, 110)
+            }
+        }
+        .sheet(isPresented: $showConfirmation) {
+            if let item = pendingItem {
+                RedeemConfirmationSheet(
+                    item: item,
+                    userPoints: points,
+                    onConfirm: {
+                        showConfirmation = false
+                        points -= item.cost
+                        redeemedItem = item.title
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        coinAnimating = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { coinAnimating = false }
+                        pendingItem = nil
+                    },
+                    onCancel: {
+                        showConfirmation = false
+                        pendingItem = nil
+                    }
+                )
+                .presentationDetents([.height(480)])
+                .presentationDragIndicator(.visible)
+                .presentationBackground(Color(red: 0.1, green: 0.1, blue: 0.12))
             }
         }
         .alert(item: Binding(
@@ -327,4 +351,96 @@ struct ProductTab: View {
 struct RedeemedAlert: Identifiable {
     let id = UUID()
     let message: String
+}
+
+struct RedeemConfirmationSheet: View {
+    let item: RaiPointsView.RewardItem
+    let userPoints: Int
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Character
+            Image("rai_cheer")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 120, height: 120)
+                .padding(.top, Theme.Spacing.xl)
+
+            VStack(spacing: Theme.Spacing.sm) {
+                Text("Use your RaiPoints?")
+                    .font(.system(size: 22, weight: .black, design: .rounded))
+                    .foregroundColor(.white)
+
+                Text("You're about to redeem")
+                    .font(.system(size: 14))
+                    .foregroundColor(.white.opacity(0.5))
+
+                Text(item.title)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, Theme.Spacing.xl)
+            }
+            .padding(.top, Theme.Spacing.md)
+
+            // Cost breakdown
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Cost")
+                        .font(.system(size: 12))
+                        .foregroundColor(.white.opacity(0.5))
+                    Text("\(item.cost) RaiPoints")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(Color.theme.accentPrimary)
+                }
+
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("Remaining after")
+                        .font(.system(size: 12))
+                        .foregroundColor(.white.opacity(0.5))
+                    Text("\(userPoints - item.cost) RaiPoints")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(.white)
+                }
+            }
+            .padding(Theme.Spacing.md)
+            .background(Color.white.opacity(0.06))
+            .cornerRadius(Theme.Radius.md)
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.Radius.md)
+                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+            )
+            .padding(.horizontal, Theme.Spacing.lg)
+            .padding(.top, Theme.Spacing.lg)
+
+            Spacer()
+
+            // Action buttons
+            VStack(spacing: Theme.Spacing.sm) {
+                Button(action: onConfirm) {
+                    Text("Confirm Redemption")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(Color.theme.textOnAccentYellow)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                        .background(Color.theme.accentPrimary)
+                        .cornerRadius(Theme.Radius.md)
+                }
+
+                Button(action: onCancel) {
+                    Text("Cancel")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.6))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 44)
+                }
+            }
+            .padding(.horizontal, Theme.Spacing.lg)
+            .padding(.bottom, Theme.Spacing.xl)
+        }
+    }
 }

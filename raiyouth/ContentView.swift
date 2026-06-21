@@ -17,11 +17,13 @@ struct ContentView: View {
     @State private var activeTab = 0
     @State private var showingRewardConfetti = false
     @State private var showResetAlert = false
+    @State private var showProfile = false
     @State private var isIntroPlaying = true
     @State private var selectedQuestId: String? = nil
     @State private var isCardExpanded = false
     @State private var showPointsHistory = false
     @State private var showAddMoneySheet = false
+    @State private var showKUIKRequestSheet = false
     @State private var showCustomizeSheet = false
     @State private var showReportsView = false
     @State private var showAccountDetailsSheet = false
@@ -29,6 +31,7 @@ struct ContentView: View {
     @State private var highlightedMissionId: String? = nil
     @State private var selectedAccountIndex = 0
     @AppStorage("userSignupRewardAmount") private var userSignupRewardAmount = 0.0
+    @AppStorage("kuikSimulatedReceivedAmount") private var kuikSimulatedReceivedAmount = 0.0
     @AppStorage("accountTheme0") private var accountTheme0 = "yellow"
     @AppStorage("accountTheme1") private var accountTheme1 = "dark"
 
@@ -176,7 +179,8 @@ struct ContentView: View {
                                         userFullName: userFullName,
                                         userSignupRewardAmount: userSignupRewardAmount,
                                         showPointsHistory: $showPointsHistory,
-                                        showResetAlert: $showResetAlert
+                                        showResetAlert: $showResetAlert,
+                                        showProfile: $showProfile
                                     )
                                 }
                             }
@@ -189,10 +193,18 @@ struct ContentView: View {
                         }
                         .background(Color.theme.canvas.ignoresSafeArea())
                         .sheet(isPresented: $showAddMoneySheet) {
-                            AddMoneySheetView()
+                            AddMoneySheetView(onAskFriendKUIK: {
+                                showAddMoneySheet = false
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                    showKUIKRequestSheet = true
+                                }
+                            })
+                        }
+                        .sheet(isPresented: $showKUIKRequestSheet) {
+                            KUIKRequestSimulationView(kuikSimulatedReceivedAmount: $kuikSimulatedReceivedAmount)
                         }
                         .sheet(isPresented: $showPointsHistory) {
-                        PointsHistoryView(totalPoints: Int(300 + userSignupRewardAmount), highlightedMissionId: highlightedMissionId)
+                        PointsHistoryView(basePoints: Int(300 + userSignupRewardAmount), kuikSimulatedReceivedAmount: kuikSimulatedReceivedAmount, highlightedMissionId: highlightedMissionId)
                             .presentationDetents([.large])
                             .presentationDragIndicator(.hidden)
                             .presentationCornerRadius(28)
@@ -204,6 +216,12 @@ struct ContentView: View {
                         CustomizeAccountSheetView(
                             theme: selectedAccountIndex == 0 ? $accountTheme0 : $accountTheme1
                         )
+                            .presentationDetents([.large])
+                            .presentationDragIndicator(.hidden)
+                            .presentationCornerRadius(28)
+                    }
+                    .sheet(isPresented: $showProfile) {
+                        ProfileView()
                             .presentationDetents([.large])
                             .presentationDragIndicator(.hidden)
                             .presentationCornerRadius(28)
@@ -237,6 +255,7 @@ struct ContentView: View {
                                     userFullName = ""
                                     userIdNumber = ""
                                     userSignupRewardAmount = 0.0
+                                    kuikSimulatedReceivedAmount = 0.0
                                 }
                             },
                             secondaryButton: .cancel()
@@ -271,6 +290,7 @@ struct HomeTabView: View {
 
     @AppStorage("accountTheme0") private var accountTheme0 = "yellow"
     @AppStorage("accountTheme1") private var accountTheme1 = "dark"
+    @AppStorage("kuikSimulatedReceivedAmount") private var kuikSimulatedReceivedAmount = 0.0
 
     private var accountTheme: String {
         selectedAccountIndex == 0 ? accountTheme0 : accountTheme1
@@ -298,7 +318,7 @@ struct HomeTabView: View {
         return .white
     }
     
-    private var totalBalance: Double { 120.0 + userSignupRewardAmount }
+    private var totalBalance: Double { kuikSimulatedReceivedAmount + userSignupRewardAmount }
 
     private var accountSecondaryTextColor: Color {
         if selectedAccountIndex == 0 {
@@ -418,6 +438,7 @@ struct HomeTabView: View {
                 Spacer().frame(height: 110)
                 balanceSection
                 addMoneyBanner
+                    .animation(.spring(response: 0.5, dampingFraction: 0.8), value: kuikSimulatedReceivedAmount > 0)
                 CardSectionView(
                     userPersona: userPersona,
                     userCardColor: userCardColor,
@@ -633,17 +654,23 @@ struct HomeTabView: View {
     }
 
     @ViewBuilder private var addMoneyBanner: some View {
-        ZStack(alignment: .bottomLeading) {
+        if kuikSimulatedReceivedAmount > 0 {
             Button(action: {
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                showAddMoneySheet = true
             }) {
-                HStack(spacing: 12) {
-                    Spacer().frame(width: 155)
+                HStack(spacing: 14) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Color.theme.accentPrimary.opacity(0.15))
+                            .frame(width: 52, height: 52)
+                        Image(systemName: "creditcard.fill")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundColor(Color.theme.accentPrimary)
+                    }
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Get your 20 Euros!")
+                        Text("Order a card & win more!")
                             .font(.system(size: 16, weight: .bold, design: .rounded)).foregroundColor(.white)
-                        Text("Claim your reward by adding money to your account.")
+                        Text("Get a raiyouth debit card and unlock exclusive rewards.")
                             .font(.system(size: 13, weight: .regular))
                             .foregroundColor(Color.theme.textSecondary)
                             .multilineTextAlignment(.leading)
@@ -662,15 +689,49 @@ struct HomeTabView: View {
                 .shadow(color: Color.theme.accentPrimary.opacity(0.15), radius: 12, x: 0, y: 6)
             }
             .buttonStyle(PlainButtonStyle())
+            .padding(.horizontal, Theme.Spacing.lg)
+            .transition(.opacity.combined(with: .move(edge: .top)))
+        } else {
+            ZStack(alignment: .bottomLeading) {
+                Button(action: {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    showAddMoneySheet = true
+                }) {
+                    HStack(spacing: 12) {
+                        Spacer().frame(width: 155)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Get your 20 Euros!")
+                                .font(.system(size: 16, weight: .bold, design: .rounded)).foregroundColor(.white)
+                            Text("Claim your reward by adding money to your account.")
+                                .font(.system(size: 13, weight: .regular))
+                                .foregroundColor(Color.theme.textSecondary)
+                                .multilineTextAlignment(.leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right").font(.system(size: 14, weight: .bold)).foregroundColor(Color.theme.accentPrimary)
+                    }
+                    .padding(Theme.Spacing.md)
+                    .background(LinearGradient(colors: [Color.theme.surface2, Color.theme.surface3], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.lg, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Theme.Radius.lg, style: .continuous)
+                            .stroke(LinearGradient(colors: [Color.theme.accentPrimary.opacity(0.5), Color.clear], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1)
+                    )
+                    .shadow(color: Color.theme.accentPrimary.opacity(0.15), radius: 12, x: 0, y: 6)
+                }
+                .buttonStyle(PlainButtonStyle())
 
-            Image("rai_gift_character")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 210)
-                .offset(x: -6, y: 0)
-                .allowsHitTesting(false)
+                Image("rai_gift_character")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 210)
+                    .offset(x: -6, y: 0)
+                    .allowsHitTesting(false)
+            }
+            .padding(.horizontal, Theme.Spacing.lg)
+            .transition(.opacity.combined(with: .move(edge: .top)))
         }
-        .padding(.horizontal, Theme.Spacing.lg)
     }
 
     @ViewBuilder private var goalProgressSection: some View {
@@ -1124,21 +1185,28 @@ struct HomeHeaderView: View {
     let userSignupRewardAmount: Double
     @Binding var showPointsHistory: Bool
     @Binding var showResetAlert: Bool
+    @Binding var showProfile: Bool
 
     var body: some View {
         HStack {
             let initials = userFullName.split(separator: " ").compactMap { $0.first }.map { String($0) }.joined().uppercased()
             let displayInitials = initials.isEmpty ? "DF" : initials
 
-            Circle()
-                .fill(Color.theme.accentPrimary)
-                .frame(width: 38, height: 38)
-                .overlay(Text(displayInitials).font(.system(size: 14, weight: .bold, design: .rounded)).foregroundColor(.white))
-                .shadow(color: Color.theme.accentPrimary.opacity(0.3), radius: 4)
+            Button(action: {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                showProfile = true
+            }) {
+                HStack(spacing: Theme.Spacing.sm) {
+                    Circle()
+                        .fill(Color.theme.accentPrimary)
+                        .frame(width: 38, height: 38)
+                        .overlay(Text(displayInitials).font(.system(size: 14, weight: .bold, design: .rounded)).foregroundColor(.white))
+                        .shadow(color: Color.theme.accentPrimary.opacity(0.3), radius: 4)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(userFullName.sentenceCased).themeFont(.title).foregroundColor(.white)
+                    Text(userFullName.sentenceCased).themeFont(.title).foregroundColor(.white)
+                }
             }
+            .buttonStyle(PlainButtonStyle())
 
             Spacer()
 
@@ -1255,6 +1323,7 @@ struct BottomNavBar: View {
 
 struct AddMoneySheetView: View {
     @Environment(\.presentationMode) var presentationMode
+    let onAskFriendKUIK: () -> Void
 
     var body: some View {
         NavigationView {
@@ -1275,9 +1344,9 @@ struct AddMoneySheetView: View {
                         .padding(.top, Theme.Spacing.xl).padding(.bottom, Theme.Spacing.md)
 
                         VStack(spacing: Theme.Spacing.md) {
-                            AddMoneyOptionRow(icon: "paperplane.fill", iconColor: Color.theme.accentTeal, title: "Ask a friend with KUIK", subtitle: "Send a request via phone number instantly.")
-                            AddMoneyOptionRow(icon: "building.columns.fill", iconColor: Color(hex: "5675FF"), title: "Deposit from bank account", subtitle: "Use your IBAN to receive a standard transfer.")
-                            AddMoneyOptionRow(icon: "creditcard.fill", iconColor: Color(hex: "FF794B"), title: "Top up with card", subtitle: "Use Apple Pay or another debit/credit card.")
+                            AddMoneyOptionRow(icon: "paperplane.fill", iconColor: Color.theme.accentTeal, title: "Ask a friend with KUIK", subtitle: "Send a request via phone number instantly.", action: onAskFriendKUIK)
+                            AddMoneyOptionRow(icon: "building.columns.fill", iconColor: Color(hex: "5675FF"), title: "Deposit from bank account", subtitle: "Use your IBAN to receive a standard transfer.", action: {})
+                            AddMoneyOptionRow(icon: "creditcard.fill", iconColor: Color(hex: "FF794B"), title: "Top up with card", subtitle: "Use Apple Pay or another debit/credit card.", action: {})
                         }
                         .padding(.horizontal, Theme.Spacing.lg)
 
@@ -1302,9 +1371,13 @@ struct AddMoneyOptionRow: View {
     let iconColor: Color
     let title: String
     let subtitle: String
+    let action: () -> Void
 
     var body: some View {
-        Button(action: { UIImpactFeedbackGenerator(style: .light).impactOccurred() }) {
+        Button(action: {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            action()
+        }) {
             HStack(spacing: 16) {
                 ZStack {
                     Circle().fill(iconColor.opacity(0.15)).frame(width: 48, height: 48)

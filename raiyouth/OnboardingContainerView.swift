@@ -4,20 +4,22 @@ import AudioToolbox // Imported for premium unlock sound
 struct OnboardingContainerView: View {
     @State private var data = OnboardingData()
     @State private var currentStep = 1
-    
+
     @State private var unlockImage: String? = nil
     @State private var unlockTitle: String = ""
-    
+
+    @AppStorage("userKYCStatus") private var userKYCStatus = ""
+
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    
+
     let onOnboardingComplete: (OnboardingData) -> Void
     
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
-            // Money Island Visual Progress Header (only shown after slides landing and story views)
-            if currentStep > 2 {
+            // Money Island Visual Progress Header (shown from GuideIntro onward — after phone+OTP+story)
+            if currentStep > 4 {
                 progressHeader
                     .padding(.top, Theme.Spacing.md)
                     .padding(.bottom, Theme.Spacing.sm)
@@ -27,6 +29,7 @@ struct OnboardingContainerView: View {
             // Onboarding Step Content with transitions
             ZStack {
                 switch currentStep {
+                // Landing
                 case 1:
                     OnboardingSlidesView(onSignUp: {
                         navigateToStep(2)
@@ -34,45 +37,45 @@ struct OnboardingContainerView: View {
                         navigateToStep(2)
                     })
                     .transition(reduceMotion ? .opacity : .asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
-                
-                // Storytelling & Rai Introduction
+
+                // Phone + OTP (pre-commitment, no island header)
                 case 2:
-                    OnboardingStoryView(onNext: {
+                    OnboardingWelcomeView(data: $data, onNext: {
                         navigateToStep(3)
                     }, onBack: {
                         navigateToStep(1)
                     })
                     .transition(reduceMotion ? .opacity : .asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
-                
-                // Step 1: Meet Your Money Guide (Rai)
                 case 3:
-                    OnboardingGuideIntroView(data: $data, onNext: {
+                    OnboardingOTPView(data: $data, onNext: {
                         navigateToStep(4)
                     }, onBack: {
                         navigateToStep(2)
                     })
                     .transition(reduceMotion ? .opacity : .asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
-                
-                // Step 2: Signal Tower (2a. Phone, 2b. OTP, 2c. Email, 2d. Notifications)
+
+                // Story — shown after OTP so user has already invested; no back button
                 case 4:
-                    OnboardingWelcomeView(data: $data, onNext: {
+                    OnboardingStoryView(onNext: {
                         navigateToStep(5)
-                    }, onBack: {
-                        navigateToStep(3)
-                    })
+                    }, onBack: {}, showBack: false)
                     .transition(reduceMotion ? .opacity : .asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
+
+                // Meet Your Guide (island header appears here for the first time)
                 case 5:
-                    OnboardingOTPView(data: $data, onNext: {
+                    OnboardingGuideIntroView(data: $data, onNext: {
                         navigateToStep(6)
                     }, onBack: {
-                        navigateToStep(4)
+                        navigateToStep(3) // skip story on back
                     })
                     .transition(reduceMotion ? .opacity : .asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
+
+                // Email, Notifications
                 case 6:
                     OnboardingEmailView(data: $data, onNext: {
                         navigateToStep(7)
                     }, onBack: {
-                        navigateToStep(5)
+                        navigateToStep(5) // back to guide, not story
                     })
                     .transition(reduceMotion ? .opacity : .asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
                 case 7:
@@ -127,6 +130,9 @@ struct OnboardingContainerView: View {
                         navigateToStep(14)
                     }, onBack: {
                         navigateToStep(12)
+                    }, onSkipKYC: {
+                        userKYCStatus = "pending"
+                        navigateToStep(17)
                     })
                     .transition(reduceMotion ? .opacity : .asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
                 case 14:
@@ -145,6 +151,7 @@ struct OnboardingContainerView: View {
                     .transition(reduceMotion ? .opacity : .asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
                 case 16:
                     OnboardingSelfieView(data: $data, onNext: {
+                        userKYCStatus = "verified"
                         navigateToStep(17)
                     }, onBack: {
                         navigateToStep(15)
@@ -200,13 +207,13 @@ struct OnboardingContainerView: View {
     
     private func getIslandStageDetails(for step: Int) -> (image: String, title: String)? {
         switch step {
-        case 3: return ("island_base", "Money Island")
-        case 4, 5, 6, 7: return ("island_guide", "Guide Unlocked")
-        case 8, 9: return ("island_tower", "Signal Tower Built")
-        case 10, 11, 12, 13, 14, 15, 16: return ("island_house", "Profile House Built")
-        case 17, 18: return ("island_gate", "Trust Gate Opened")
-        case 19: return ("island_pin", "Vault Locked")
-        default: return nil
+        case 5:           return ("island_base", "Money Island")
+        case 6, 7:        return ("island_guide", "Guide Unlocked")
+        case 8, 9:        return ("island_tower", "Signal Tower Built")
+        case 10...16:     return ("island_house", "Profile House Built")
+        case 17, 18:      return ("island_gate", "Trust Gate Opened")
+        case 19:          return ("island_pin", "Vault Locked")
+        default:          return nil  // steps 1-4 trigger no island unlock
         }
     }
 
@@ -241,8 +248,8 @@ struct OnboardingContainerView: View {
             MoneyIslandProgressView(currentStep: currentStep)
             
             GeometryReader { geometry in
-                let totalSteps = 16.0
-                let percentage = Double(min(currentStep - 3, 16)) / totalSteps
+                let totalSteps = 14.0
+                let percentage = Double(min(currentStep - 5, 14)) / totalSteps
                 
                 ZStack(alignment: .leading) {
                     Rectangle()

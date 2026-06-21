@@ -30,12 +30,12 @@ struct OnboardingWelcomeView: View {
             .padding(.top, Theme.Spacing.xs)
             
             VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-                Text("Build your Signal Tower")
+                Text("What's your phone number?")
                     .font(.system(size: 28, weight: .bold, design: .rounded))
                     .foregroundColor(.theme.textPrimary)
                     .padding(.top, Theme.Spacing.lg)
-                
-                Text("Enter your phone number to secure your island. We will send a verification code.")
+
+                Text("We'll send you a short verification code to confirm it's really you.")
                     .themeFont(.caption)
                     .foregroundColor(.theme.textSecondary)
                 
@@ -79,7 +79,7 @@ struct OnboardingWelcomeView: View {
                     HStack(spacing: 8) {
                         Image(systemName: "checkmark.seal.fill")
                             .foregroundColor(.theme.accentPrimary)
-                        Text("Signal Tower Built")
+                        Text("Looks good")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundColor(.white)
                     }
@@ -106,7 +106,7 @@ struct OnboardingWelcomeView: View {
             
             // Continue/Sign up button
             Button(action: onNext) {
-                Text("Build Tower")
+                Text("Send code")
             }
             .buttonStyle(PremiumButtonStyle(isEnabled: isPhoneValid))
             .disabled(!isPhoneValid)

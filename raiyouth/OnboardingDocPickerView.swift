@@ -9,6 +9,7 @@ struct OnboardingDocPickerView: View {
     @Binding var data: OnboardingData
     let onNext: () -> Void
     let onBack: () -> Void
+    let onSkipKYC: () -> Void
     
     @State private var selectedType = "id"
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
@@ -89,12 +90,11 @@ struct OnboardingDocPickerView: View {
                     // Passport option card
                     Button(action: { selectedType = "passport" }) {
                         HStack(spacing: Theme.Spacing.md) {
-                            // Radio indicator
                             Circle()
                                 .strokeBorder(selectedType == "passport" ? Color.theme.accentPrimary : Color.white.opacity(0.15), lineWidth: 2)
                                 .background(Circle().fill(selectedType == "passport" ? Color.theme.accentPrimary : Color.clear).padding(4))
                                 .frame(width: 22, height: 22)
-                            
+
                             ZStack {
                                 Circle()
                                     .fill(Color.theme.accentPrimary.opacity(0.12))
@@ -102,11 +102,11 @@ struct OnboardingDocPickerView: View {
                                 Image(systemName: "globe.desk.fill")
                                     .foregroundColor(.theme.accentPrimary)
                             }
-                            
+
                             Text("Passport")
                                 .font(.system(size: 16, weight: .semibold))
                                 .foregroundColor(.white)
-                            
+
                             Spacer()
                         }
                         .padding(16)
@@ -117,6 +117,45 @@ struct OnboardingDocPickerView: View {
                         .overlay(
                             RoundedRectangle(cornerRadius: Theme.Radius.lg)
                                 .stroke(selectedType == "passport" ? Color.theme.accentPrimary : Color.white.opacity(0.1), lineWidth: selectedType == "passport" ? 1.5 : 1)
+                        )
+                    }
+                    .buttonStyle(CardButtonStyle())
+
+                    // Scan later option
+                    Button(action: { selectedType = "later" }) {
+                        HStack(spacing: Theme.Spacing.md) {
+                            Circle()
+                                .strokeBorder(selectedType == "later" ? Color.theme.warning : Color.white.opacity(0.15), lineWidth: 2)
+                                .background(Circle().fill(selectedType == "later" ? Color.theme.warning : Color.clear).padding(4))
+                                .frame(width: 22, height: 22)
+
+                            ZStack {
+                                Circle()
+                                    .fill(Color.theme.warning.opacity(0.12))
+                                    .frame(width: 42, height: 42)
+                                Image(systemName: "clock.badge.questionmark.fill")
+                                    .foregroundColor(.theme.warning)
+                            }
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Scan ID later")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(.white)
+                                Text("Your account will be limited until verified")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.theme.textSecondary)
+                            }
+
+                            Spacer()
+                        }
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: Theme.Radius.lg)
+                                .fill(reduceTransparency ? Color.theme.surface2 : (selectedType == "later" ? Color.theme.warning.opacity(0.07) : Color.white.opacity(0.04)))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: Theme.Radius.lg)
+                                .stroke(selectedType == "later" ? Color.theme.warning.opacity(0.6) : Color.white.opacity(0.08), lineWidth: selectedType == "later" ? 1.5 : 1)
                         )
                     }
                     .buttonStyle(CardButtonStyle())
@@ -131,12 +170,16 @@ struct OnboardingDocPickerView: View {
             VStack(spacing: Theme.Spacing.md) {
                 Button(action: {
                     data.selectedDocType = selectedType
-                    onNext()
+                    if selectedType == "later" {
+                        onSkipKYC()
+                    } else {
+                        onNext()
+                    }
                 }) {
-                    Text("Continue")
+                    Text(selectedType == "later" ? "Skip for now" : "Continue")
                 }
                 .buttonStyle(PremiumButtonStyle(isEnabled: true))
-                
+
                 Button(action: onBack) {
                     Text("Change your citizenship")
                         .font(.system(size: 15, weight: .semibold))
@@ -153,5 +196,5 @@ struct OnboardingDocPickerView: View {
 }
 
 #Preview {
-    OnboardingDocPickerView(data: .constant(OnboardingData()), onNext: {}, onBack: {})
+    OnboardingDocPickerView(data: .constant(OnboardingData()), onNext: {}, onBack: {}, onSkipKYC: {})
 }

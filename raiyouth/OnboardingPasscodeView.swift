@@ -46,17 +46,17 @@ struct OnboardingPasscodeView: View {
             
             VStack(spacing: Theme.Spacing.xl) {
                 VStack(spacing: Theme.Spacing.md) {
-                    Text(isConfirming ? "Confirm Vault Key" : "Lock your Vault")
+                    Text(isConfirming ? "Confirm your passcode" : "Create a passcode")
                         .font(.system(size: 28, weight: .bold, design: .rounded))
                         .foregroundColor(.theme.textPrimary)
                         .padding(.top, Theme.Spacing.xl)
-                    
+
                     if isConfirming {
-                        Text(showError ? "Passcodes do not match. Please try again." : "Please re-enter your passcode to verify and lock your vault.")
+                        Text(showError ? "Passcodes don't match. Please try again." : "Re-enter your passcode to confirm.")
                             .themeFont(.caption)
                             .foregroundColor(showError ? Color.theme.danger : .theme.textSecondary)
                     } else {
-                        Text(showError ? "Passcode must be between 6 and 12 digits." : "Create a secret passcode to secure your island's assets and encrypt your wallet.")
+                        Text(showError ? "Passcode must be between 6 and 12 digits." : "This protects your account. Keep it somewhere safe.")
                             .themeFont(.caption)
                             .foregroundColor(showError ? Color.theme.danger : .theme.textSecondary)
                     }

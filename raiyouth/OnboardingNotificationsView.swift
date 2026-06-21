@@ -24,12 +24,12 @@ struct OnboardingNotificationsView: View {
             .padding(.top, Theme.Spacing.xs)
             
             VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-                Text("Connect Signal Tower")
+                Text("Stay in the loop")
                     .font(.system(size: 28, weight: .bold, design: .rounded))
                     .foregroundColor(.theme.textPrimary)
                     .padding(.top, Theme.Spacing.lg)
-                
-                Text("Turn on notifications so your Signal Tower can instantly broadcast transaction updates and security alerts to your device.")
+
+                Text("Get instant alerts for payments, transfers, and security events — so nothing catches you off guard.")
                     .themeFont(.body)
                     .foregroundColor(.theme.textSecondary)
                     .lineSpacing(4)
