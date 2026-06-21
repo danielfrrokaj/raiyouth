@@ -1,4 +1,5 @@
 import SwiftUI
+import AVFoundation
 
 struct RaiPointsView: View {
     let userSignupRewardAmount: Double
@@ -8,6 +9,7 @@ struct RaiPointsView: View {
     @State private var coinAnimating = false
     @State private var pendingItem: RewardItem? = nil
     @State private var showConfirmation = false
+    @State private var audioPlayer: AVAudioPlayer? = nil
     
     // Product data matching the catalog selection
     struct RewardItem: Identifiable {
@@ -290,6 +292,10 @@ struct RaiPointsView: View {
                         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                         coinAnimating = true
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { coinAnimating = false }
+                        if let url = Bundle.main.url(forResource: "unlock", withExtension: "wav") {
+                            audioPlayer = try? AVAudioPlayer(contentsOf: url)
+                            audioPlayer?.play()
+                        }
                         pendingItem = nil
                     },
                     onCancel: {
